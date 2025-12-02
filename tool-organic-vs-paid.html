@@ -19,14 +19,16 @@
       --radius-md: 10px;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       padding: 16px;
       background: var(--bg);
-      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC",
-        "Microsoft Yahei",sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "PingFang SC", "Microsoft Yahei", sans-serif;
       color: var(--text-main);
       -webkit-font-smoothing: antialiased;
     }
@@ -41,8 +43,13 @@
       padding: 16px 18px 12px;
       border-radius: 18px;
       border: 1px solid var(--border-soft);
-      background: radial-gradient(circle at top left,#eff6ff 0,#e0f2fe 40%,#f9fafb 100%);
-      box-shadow: 0 10px 24px rgba(148,163,184,0.35);
+      background: radial-gradient(
+        circle at top left,
+        #eff6ff 0,
+        #e0f2fe 40%,
+        #f9fafb 100%
+      );
+      box-shadow: 0 10px 24px rgba(148, 163, 184, 0.35);
     }
 
     .header-title {
@@ -96,7 +103,7 @@
       border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       background: var(--card);
-      box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
       padding: 12px 12px 10px;
       display: flex;
       flex-direction: column;
@@ -173,7 +180,7 @@
     }
 
     .btn-generate:hover {
-      background: rgba(14,165,233,0.16);
+      background: rgba(14, 165, 233, 0.16);
       border-color: var(--accent-strong);
     }
 
@@ -229,17 +236,20 @@
     <header class="header">
       <div class="header-title">自然量 & 买量 Excel → JS 源数据转换工具</div>
       <div class="header-sub">
-        上传 Excel 后，点击「生成 code」，得到可以直接粘贴到 <code>RAW_ORGANIC_BY_MONTH</code> /
-        <code>RAW_PAID_BY_MONTH</code> 的 <code>"YYYY-MM": [ {{...}} ]</code> 片段。
+        上传 Excel 后，点击「生成 code」，得到可以直接粘贴到你看板数据源的
+        <code>"YYYY-MM": [ { month: "YYYY-MM", ... } ]</code> 片段。
       </div>
       <div class="header-note">
-        · 自然量：sheet 名默认 <strong>zrl_country_monthly</strong>，第 1 行是表头（含 <code>date</code> / <code>country</code> / <code>注册人数</code> 等），第 2 行为英文字段说明会被自动过滤。<br />
-        · 买量：sheet 名默认 <strong>Sheet1</strong>，第 1 行为英文字段表头（含 <code>date</code> / <code>country</code> / <code>media</code> / <code>Product_type</code> / <code>spent</code> 等）。<br />
-        · 输出片段形态示例：<code>"2025-10": [ { date: "2025-10-01", country: "GH", ... } ]</code>。
+        · 自然量：默认读取 Excel 的第一个 sheet，首行为英文表头（<code>date</code> /
+        <code>country</code> / <code>registration</code> / 各类 D0 / D7 字段），下面每行是「日期 × 国家」数据。<br />
+        · 买量：同样默认读取第一个 sheet，首行为英文表头（<code>date</code> /
+        <code>country</code> / <code>media</code> / <code>Product_type</code> /
+        <code>spent</code> / 各类 D0 / D7 字段）。<br />
+        · 输出示例：<code>"2025-10": [ { month: "2025-10", date: "2025-10-01", country: "GH", ... } ]</code>。
       </div>
       <div class="badge-row">
-        <span class="badge">白色主题 · 纯前端 · 无需安装软件</span>
-        <span class="badge">输出格式对齐你现有看板</span>
+        <span class="badge">白色系主题 · 纯前端 · 无需安装软件</span>
+        <span class="badge">输出字段对齐你当前看板模版</span>
       </div>
     </header>
 
@@ -250,7 +260,8 @@
           <div>
             <div class="card-title">自然量 Excel → JS 片段</div>
             <div class="card-sub">
-              输出格式：<code>"YYYY-MM": [ { date: "...", country: "GH", ... } ]</code>，直接粘贴到 <code>RAW_ORGANIC_BY_MONTH</code> 内部。
+              输出格式：<code>"YYYY-MM": [ { month, date, country, regs, d0Payers, d7Payers, ... } ]</code>，
+              直接粘贴到自然量月度看板的数据对象。
             </div>
           </div>
           <button type="button" class="btn-copy" id="copy-org">复制自然量 code</button>
@@ -258,43 +269,59 @@
 
         <div class="file-row">
           <span>自然量 Excel：</span>
-          <input type="file" id="organic-file" class="file-input" accept=".xlsx,.xls" />
-          <button type="button" class="btn-generate" id="gen-org">生成自然量 code</button>
+          <input
+            type="file"
+            id="organic-file"
+            class="file-input"
+            accept=".xlsx,.xls,.csv"
+          />
+          <button type="button" class="btn-generate" id="gen-org">
+            生成自然量 code
+          </button>
         </div>
-        <div class="hint">
-          · 要求：表头包含 <strong>date</strong> / <strong>country</strong> / <strong>注册人数</strong> / <strong>D0充值人数</strong> / <strong>D0体育流水</strong> 等列。<br />
-          · 如一个文件包含多个月，会按日期自动拆分成多段 <code>"YYYY-MM": [ ... ]</code>。
-        </div>
-        <div class="output">
-          <textarea id="organic-output" placeholder='上传自然量 Excel 后，点击「生成自然量 code」，这里会生成类似：
 
-// ===== 2025-10 自然量（粘贴到 RAW_ORGANIC_BY_MONTH 对象里） =====
+        <div class="hint">
+          · 要求：首行为英文表头，至少包含
+          <strong>date</strong> / <strong>country</strong> /
+          <strong>registration</strong> /
+          <strong>D0_unique_purchase</strong> /
+          <strong>D7_unique_purchase</strong> /
+          <strong>D0_SPORTS_GGR_VALUE</strong> /
+          <strong>D7_SPORTS_GGR_VALUE</strong> /
+          <strong>D0_GAMES_GGR_VALUE</strong> /
+          <strong>D7_GAMES_GGR_VALUE</strong> /
+          <strong>D1_retained_users</strong> /
+          <strong>D7_retained_users</strong> 等列。<br />
+          · <code>retentionD1</code> / <code>retentionD7</code> =
+          对应留存人数 ÷ <code>registration</code>，输出为小数（如 0.35）。
+        </div>
+
+        <div class="output">
+          <textarea
+            id="organic-output"
+            placeholder='上传自然量 Excel 后，点击「生成自然量 code」，这里会生成类似：
+
+// ===== 2025-10 自然量（粘贴到自然量月度看板数据对象中） =====
 "2025-10": [
   {
+    month: "2025-10",
     date: "2025-10-01",
-    country: "GH",
-    registration: 100,
-    D0_unique_purchase: 20,
-    D7_unique_purchase: 28,
-    D0_PURCHASE_VALUE: 150.0,
-    D7_PURCHASE_VALUE: 380.0,
-    D0_TOTAL_BET_PLACED_USER: 35,
-    D7_TOTAL_BET_PLACED_USER: 48,
-    D0_SPORTS_BET_PLACED_USER: 12,
-    D0_GAMES_BET_PLACED_USER: 30,
-    D7_SPORTS_BET_PLACED_USER: 16,
-    D7_GAMES_BET_PLACED_USER: 40,
-    D0_SPORTS_BET_FLOW: 90.0,
-    D0_GAMES_BET_FLOW: 210.0,
-    D0_TOTAL_BET_FLOW: 300.0,
-    D7_SPORTS_BET_FLOW: 260.0,
-    D7_GAMES_BET_FLOW: 1220.0,
-    D7_TOTAL_BET_FLOW: 1480.0,
-    D1_retained_users: 60,
-    D7_retained_users: 32
+    country: "GH", // GH / KE / NG / TZ / UG
+    regs: 302,
+    d0Payers: 138,
+    d7Payers: 172,
+    ggrSportsD0: 93.48,
+    ggrSportsD7: 532.02,
+    ggrGamesD0: 2211.0,
+    ggrGamesD7: 16393.33,
+    sportsPlayers: 108,
+    gamesPlayers: 138,
+    retentionD1: 0.46,
+    retentionD7: 0.20,
   }
   // ... 其他日期 × 国家
-]'></textarea>
+]'
+          ></textarea>
         </div>
       </section>
 
@@ -304,7 +331,9 @@
           <div>
             <div class="card-title">买量 Excel → JS 片段</div>
             <div class="card-sub">
-              输出格式：<code>"YYYY-MM": [ { date: "...", media: "FB", productType: "app", ... } ]</code>，直接粘贴到 <code>RAW_PAID_BY_MONTH</code> 内部。
+              输出格式：
+              <code>"YYYY-MM": [ { month, date, country, media, productType, spend, ... } ]</code>，
+              直接粘贴到买量月度看板的数据对象。
             </div>
           </div>
           <button type="button" class="btn-copy" id="copy-paid">复制买量 code</button>
@@ -312,55 +341,69 @@
 
         <div class="file-row">
           <span>买量 Excel：</span>
-          <input type="file" id="paid-file" class="file-input" accept=".xlsx,.xls" />
-          <button type="button" class="btn-generate" id="gen-paid">生成买量 code</button>
+          <input
+            type="file"
+            id="paid-file"
+            class="file-input"
+            accept=".xlsx,.xls,.csv"
+          />
+          <button type="button" class="btn-generate" id="gen-paid">
+            生成买量 code
+          </button>
         </div>
-        <div class="hint">
-          · 要求：表头至少包含 <strong>date</strong> / <strong>country</strong> / <strong>media</strong> / <strong>Product_type</strong> / <strong>spent</strong> 等列。<br />
-          · 输出字段包括：<code>date</code>、<code>country</code>、<code>media</code>、<code>productType</code>、<code>spent</code>、D0/D7 指标和 <code>total_ggr</code> / <code>sports_ggr</code> / <code>games_ggr</code>。
-        </div>
-        <div class="output">
-          <textarea id="paid-output" placeholder='上传买量 Excel 后，点击「生成买量 code」，这里会生成类似：
 
-// ===== 2025-10 买量（粘贴到 RAW_PAID_BY_MONTH 对象里） =====
+        <div class="hint">
+          · 要求：首行为英文表头，至少包含
+          <strong>date</strong> / <strong>country</strong> /
+          <strong>media</strong> / <strong>Product_type</strong> /
+          <strong>spent</strong> / <strong>registration</strong> /
+          <strong>D0_unique_purchase</strong> /
+          <strong>D7_unique_purchase</strong> /
+          <strong>D0_SPORTS_GGR_VALUE</strong> /
+          <strong>D7_SPORTS_GGR_VALUE</strong> /
+          <strong>D0_GAMES_GGR_VALUE</strong> /
+          <strong>D7_GAMES_GGR_VALUE</strong> /
+          <strong>D1_retained_users</strong> /
+          <strong>D7_retained_users</strong> 等列。<br />
+          · <code>spend</code> 来自 <code>spent</code> 列，留存率计算逻辑同自然量。
+        </div>
+
+        <div class="output">
+          <textarea
+            id="paid-output"
+            placeholder='上传买量 Excel 后，点击「生成买量 code」，这里会生成类似：
+
+// ===== 2025-10 买量（粘贴到买量月度看板数据对象中） =====
 "2025-10": [
   {
+    month: "2025-10",
     date: "2025-10-01",
     country: "GH",
-    media: "FB",
+    regs: 200,
+    d0Payers: 45,
+    d7Payers: 70,
+    ggrSportsD0: 160.0,
+    ggrSportsD7: 420.0,
+    ggrGamesD0: 330.0,
+    ggrGamesD7: 1830.0,
+    sportsPlayers: 32,
+    gamesPlayers: 72,
+    retentionD1: 0.40,
+    retentionD7: 0.22,
+    // 买量特有字段
+    spend: 500.0,
+    media: "META",
     productType: "app",
-    spent: 500.0,
-    registration: 200,
-    D0_unique_purchase: 45,
-    D7_unique_purchase: 70,
-    D0_PURCHASE_VALUE: 220.0,
-    D7_PURCHASE_VALUE: 780.0,
-    D0_TOTAL_BET_PLACED_USER: 60,
-    D7_TOTAL_BET_PLACED_USER: 90,
-    D0_SPORTS_BET_PLACED_USER: 25,
-    D0_GAMES_BET_PLACED_USER: 50,
-    D7_SPORTS_BET_PLACED_USER: 32,
-    D7_GAMES_BET_PLACED_USER: 72,
-    D0_SPORTS_BET_FLOW: 160.0,
-    D0_GAMES_BET_FLOW: 330.0,
-    D0_TOTAL_BET_FLOW: 490.0,
-    D7_SPORTS_BET_FLOW: 420.0,
-    D7_GAMES_BET_FLOW: 1830.0,
-    D7_TOTAL_BET_FLOW: 2250.0,
-    D1_retained_users: 80,
-    D7_retained_users: 44,
-    total_ggr: 0,
-    sports_ggr: 0,
-    games_ggr: 0
   }
-  // ... 其他日期 × 国家 × 媒体 / 产品
-]'></textarea>
+  // ... 其他日期 × 国家 × 渠道 / 产品
+]'
+          ></textarea>
         </div>
       </section>
     </main>
 
     <footer class="footer">
-      使用建议：每月导出自然量 / 买量 Excel 后，用本页面生成对应月份的 JS 片段，直接粘贴到各看板的数据源区域。
+      使用建议：每月导出自然量 / 买量 Excel 后，用本页面生成对应月份 JS 片段，直接粘贴到各看板的数据源区域。
     </footer>
   </div>
 
@@ -374,7 +417,7 @@
       if (Math.abs(num - Math.round(num)) < 1e-9) {
         return String(Math.round(num));
       }
-      return num.toFixed(2).replace(/\\.00$/, "");
+      return num.toFixed(2).replace(/\.00$/, "");
     }
 
     function normalizeDateCell(v) {
@@ -388,7 +431,11 @@
       }
 
       if (typeof v === "number") {
-        if (typeof XLSX !== "undefined" && XLSX.SSF && XLSX.SSF.parse_date_code) {
+        if (
+          typeof XLSX !== "undefined" &&
+          XLSX.SSF &&
+          XLSX.SSF.parse_date_code
+        ) {
           var o = XLSX.SSF.parse_date_code(v);
           if (o && o.y && o.m && o.d) {
             var y2 = o.y;
@@ -400,7 +447,7 @@
       }
 
       if (typeof v === "string") {
-        var m = v.match(/(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})/);
+        var m = v.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
         if (m) {
           var y3 = m[1];
           var m3 = String(parseInt(m[2], 10)).padStart(2, "0");
@@ -412,9 +459,13 @@
     }
 
     function buildOrganicCode(workbook) {
-      var sheet = workbook.Sheets["zrl_country_monthly"] || workbook.Sheets[workbook.SheetNames[0]];
+      var sheetName =
+        workbook.SheetNames && workbook.SheetNames.length
+          ? workbook.SheetNames[0]
+          : null;
+      var sheet = sheetName ? workbook.Sheets[sheetName] : null;
       if (!sheet) {
-        return "// 未找到 sheet：zrl_country_monthly（或第一个 sheet 为空）";
+        return "// 未找到任何 sheet（请检查 Excel 文件）";
       }
 
       var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
@@ -423,34 +474,28 @@
       }
 
       var header = rows[0] || [];
-      function idx(name) { return header.indexOf(name); }
+      function idx(name) {
+        return header.indexOf(name);
+      }
 
       var idxDate = idx("date");
       var idxCountry = idx("country");
       if (idxDate < 0 || idxCountry < 0) {
-        return "// 表头缺少必需字段：date / country";
+        return "// 表头缺少必需字段：date / country（请确认首行为英文字段名）";
       }
 
-      var colMap = {
-        registration: idx("注册人数"),
-        D0_unique_purchase: idx("D0充值人数"),
-        D7_unique_purchase: idx("D7充值人数"),
-        D0_PURCHASE_VALUE: idx("D0充值金额"),
-        D7_PURCHASE_VALUE: idx("D7充值金额"),
-        D0_TOTAL_BET_PLACED_USER: idx("D0下注人数"),
-        D7_TOTAL_BET_PLACED_USER: idx("D7下注人数"),
-        D0_SPORTS_BET_PLACED_USER: idx("D0体育下注人数"),
-        D0_GAMES_BET_PLACED_USER: idx("D0游戏下注人数"),
-        D7_SPORTS_BET_PLACED_USER: idx("D7体育下注人数"),
-        D7_GAMES_BET_PLACED_USER: idx("D7游戏下注人数"),
-        D0_SPORTS_BET_FLOW: idx("D0体育流水"),
-        D0_GAMES_BET_FLOW: idx("D0游戏流水"),
-        D0_TOTAL_BET_FLOW: idx("D0总流水"),
-        D7_SPORTS_BET_FLOW: idx("D7体育流水"),
-        D7_GAMES_BET_FLOW: idx("D7游戏流水"),
-        D7_TOTAL_BET_FLOW: idx("D7总流水"),
-        D1_retained_users: idx("次日登录人数"),
-        D7_retained_users: idx("七日登录人数")
+      var colIdx = {
+        registration: idx("registration"),
+        d0Payers: idx("D0_unique_purchase"),
+        d7Payers: idx("D7_unique_purchase"),
+        ggrSportsD0: idx("D0_SPORTS_GGR_VALUE"),
+        ggrSportsD7: idx("D7_SPORTS_GGR_VALUE"),
+        ggrGamesD0: idx("D0_GAMES_GGR_VALUE"),
+        ggrGamesD7: idx("D7_GAMES_GGR_VALUE"),
+        sportsPlayers: idx("D7_SPORTS_BET_PLACED_USER"),
+        gamesPlayers: idx("D7_GAMES_BET_PLACED_USER"),
+        d1Retained: idx("D1_retained_users"),
+        d7Retained: idx("D7_retained_users"),
       };
 
       var monthMap = {};
@@ -459,8 +504,7 @@
         var r = rows[i];
         if (!r || !r.length) continue;
 
-        var rawDate = r[idxDate];
-        var dateStr = normalizeDateCell(rawDate);
+        var dateStr = normalizeDateCell(r[idxDate]);
         if (!dateStr) continue;
 
         var monthKey = dateStr.slice(0, 7);
@@ -468,22 +512,68 @@
         if (!rawCountry) continue;
         var country = String(rawCountry).trim().toUpperCase();
 
-        // 跳过第二行英文字段说明（通常 date / country 等字符串会进到这一行）
-        if (i === 1 && dateStr === "date" && country === "COUNTRY") continue;
+        function cellValue(key) {
+          var index = colIdx[key];
+          if (index == null || index < 0) return null;
+          return r[index];
+        }
+
+        var regNum = 0;
+        if (colIdx.registration != null && colIdx.registration >= 0) {
+          var regCell = r[colIdx.registration];
+          regNum = Number(regCell);
+          if (!Number.isFinite(regNum)) regNum = 0;
+        }
+
+        var d1Count = 0;
+        if (colIdx.d1Retained != null && colIdx.d1Retained >= 0) {
+          var c1 = r[colIdx.d1Retained];
+          d1Count = Number(c1);
+          if (!Number.isFinite(d1Count)) d1Count = 0;
+        }
+
+        var d7Count = 0;
+        if (colIdx.d7Retained != null && colIdx.d7Retained >= 0) {
+          var c7 = r[colIdx.d7Retained];
+          d7Count = Number(c7);
+          if (!Number.isFinite(d7Count)) d7Count = 0;
+        }
+
+        var retentionD1 = regNum > 0 ? d1Count / regNum : 0;
+        var retentionD7 = regNum > 0 ? d7Count / regNum : 0;
 
         var lines = [];
         lines.push("  {");
+        lines.push('    month: "' + monthKey + '",');
         lines.push('    date: "' + dateStr + '",');
         lines.push('    country: "' + country + '",');
-
-        Object.keys(colMap).forEach(function (key) {
-          var colIdx = colMap[key];
-          if (colIdx < 0) return;
-          var v = r[colIdx];
-          var jsNum = formatJsNumber(v);
-          lines.push("    " + key + ": " + jsNum + ",");
-        });
-
+        lines.push("    regs: " + formatJsNumber(cellValue("registration")) + ",");
+        lines.push("    d0Payers: " + formatJsNumber(cellValue("d0Payers")) + ",");
+        lines.push("    d7Payers: " + formatJsNumber(cellValue("d7Payers")) + ",");
+        lines.push(
+          "    ggrSportsD0: " + formatJsNumber(cellValue("ggrSportsD0")) + ","
+        );
+        lines.push(
+          "    ggrSportsD7: " + formatJsNumber(cellValue("ggrSportsD7")) + ","
+        );
+        lines.push(
+          "    ggrGamesD0: " + formatJsNumber(cellValue("ggrGamesD0")) + ","
+        );
+        lines.push(
+          "    ggrGamesD7: " + formatJsNumber(cellValue("ggrGamesD7")) + ","
+        );
+        lines.push(
+          "    sportsPlayers: " +
+            formatJsNumber(cellValue("sportsPlayers")) +
+            ","
+        );
+        lines.push(
+          "    gamesPlayers: " +
+            formatJsNumber(cellValue("gamesPlayers")) +
+            ","
+        );
+        lines.push("    retentionD1: " + formatJsNumber(retentionD1) + ",");
+        lines.push("    retentionD7: " + formatJsNumber(retentionD7) + ",");
         lines.push("  }");
 
         if (!monthMap[monthKey]) monthMap[monthKey] = [];
@@ -497,7 +587,9 @@
 
       var out = [];
       monthKeys.forEach(function (mk, idx) {
-        out.push("// ===== " + mk + " 自然量（粘贴到 RAW_ORGANIC_BY_MONTH 对象里） =====");
+        out.push(
+          "// ===== " + mk + " 自然量（粘贴到自然量月度看板数据对象中） ====="
+        );
         out.push('"' + mk + '": [');
         out.push(monthMap[mk].join(",\n"));
         out.push("]");
@@ -511,9 +603,13 @@
     }
 
     function buildPaidCode(workbook) {
-      var sheet = workbook.Sheets["Sheet1"] || workbook.Sheets[workbook.SheetNames[0]];
+      var sheetName =
+        workbook.SheetNames && workbook.SheetNames.length
+          ? workbook.SheetNames[0]
+          : null;
+      var sheet = sheetName ? workbook.Sheets[sheetName] : null;
       if (!sheet) {
-        return "// 未找到 sheet：Sheet1（或第一个 sheet 为空）";
+        return "// 未找到任何 sheet（请检查 Excel 文件）";
       }
 
       var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
@@ -522,42 +618,39 @@
       }
 
       var header = rows[0] || [];
-      function idx(name) { return header.indexOf(name); }
+      function idx(name) {
+        return header.indexOf(name);
+      }
 
       var idxDate = idx("date");
       var idxCountry = idx("country");
       var idxMedia = idx("media");
       var idxProductType = idx("Product_type");
-      if (idxDate < 0 || idxCountry < 0 || idxMedia < 0 || idxProductType < 0) {
-        return "// 表头缺少必需字段：date / country / media / Product_type";
+      var idxSpent = idx("spent");
+
+      if (
+        idxDate < 0 ||
+        idxCountry < 0 ||
+        idxMedia < 0 ||
+        idxProductType < 0 ||
+        idxSpent < 0
+      ) {
+        return "// 表头缺少必需字段：date / country / media / Product_type / spent";
       }
 
-      var colMap = {
-        spent: idx("spent"),
+      var colIdx = {
         registration: idx("registration"),
-        D0_unique_purchase: idx("D0_unique_purchase"),
-        D7_unique_purchase: idx("D7_unique_purchase"),
-        D0_PURCHASE_VALUE: idx("D0_PURCHASE_VALUE"),
-        D7_PURCHASE_VALUE: idx("D7_PURCHASE_VALUE"),
-        D0_TOTAL_BET_PLACED_USER: idx("D0_TOTAL_BET_PLACED_USER"),
-        D7_TOTAL_BET_PLACED_USER: idx("D7_TOTAL_BET_PLACED_USER"),
-        D0_SPORTS_BET_PLACED_USER: idx("D0_SPORTS_BET_PLACED_USER"),
-        D0_GAMES_BET_PLACED_USER: idx("D0_GAMES_BET_PLACED_USER"),
-        D7_SPORTS_BET_PLACED_USER: idx("D7_SPORTS_BET_PLACED_PLACED_USER") >= 0
-          ? idx("D7_SPORTS_BET_PLACED_PLACED_USER")
-          : idx("D7_SPORTS_BET_PLACED_USER"),
-        D7_GAMES_BET_PLACED_USER: idx("D7_GAMES_BET_PLACED_USER"),
-        D0_SPORTS_BET_FLOW: idx("D0_SPORTS_BET_FLOW"),
-        D0_GAMES_BET_FLOW: idx("D0_GAMES_BET_FLOW"),
-        D0_TOTAL_BET_FLOW: idx("D0_TOTAL_BET_FLOW"),
-        D7_SPORTS_BET_FLOW: idx("D7_SPORTS_BET_FLOW"),
-        D7_GAMES_BET_FLOW: idx("D7_GAMES_BET_FLOW"),
-        D7_TOTAL_BET_FLOW: idx("D7_TOTAL_BET_FLOW"),
-        D1_retained_users: idx("D1_retained_users"),
-        D7_retained_users: idx("D7_retained_users"),
-        total_ggr: idx("D7_GGR_VALUE"),
-        sports_ggr: idx("D7_SPORTS_GGR_VALUE"),
-        games_ggr: idx("D7_GAMES_GGR_VALUE")
+        d0Payers: idx("D0_unique_purchase"),
+        d7Payers: idx("D7_unique_purchase"),
+        ggrSportsD0: idx("D0_SPORTS_GGR_VALUE"),
+        ggrSportsD7: idx("D7_SPORTS_GGR_VALUE"),
+        ggrGamesD0: idx("D0_GAMES_GGR_VALUE"),
+        ggrGamesD7: idx("D7_GAMES_GGR_VALUE"),
+        sportsPlayers: idx("D7_SPORTS_BET_PLACED_USER"),
+        gamesPlayers: idx("D7_GAMES_BET_PLACED_USER"),
+        d1Retained: idx("D1_retained_users"),
+        d7Retained: idx("D7_retained_users"),
+        spent: idx("spent"),
       };
 
       var monthMap = {};
@@ -566,8 +659,7 @@
         var r = rows[i];
         if (!r || !r.length) continue;
 
-        var rawDate = r[idxDate];
-        var dateStr = normalizeDateCell(rawDate);
+        var dateStr = normalizeDateCell(r[idxDate]);
         if (!dateStr) continue;
 
         var monthKey = dateStr.slice(0, 7);
@@ -576,23 +668,78 @@
         var country = String(rawCountry).trim().toUpperCase();
 
         var media = r[idxMedia] != null ? String(r[idxMedia]).trim() : "";
-        var productType = r[idxProductType] != null ? String(r[idxProductType]).trim() : "";
+        var productType =
+          r[idxProductType] != null ? String(r[idxProductType]).trim() : "";
+
+        function cellValue(key) {
+          var index = colIdx[key];
+          if (index == null || index < 0) return null;
+          return r[index];
+        }
+
+        var regNum = 0;
+        if (colIdx.registration != null && colIdx.registration >= 0) {
+          var regCell = r[colIdx.registration];
+          regNum = Number(regCell);
+          if (!Number.isFinite(regNum)) regNum = 0;
+        }
+
+        var d1Count = 0;
+        if (colIdx.d1Retained != null && colIdx.d1Retained >= 0) {
+          var c1 = r[colIdx.d1Retained];
+          d1Count = Number(c1);
+          if (!Number.isFinite(d1Count)) d1Count = 0;
+        }
+
+        var d7Count = 0;
+        if (colIdx.d7Retained != null && colIdx.d7Retained >= 0) {
+          var c7 = r[colIdx.d7Retained];
+          d7Count = Number(c7);
+          if (!Number.isFinite(d7Count)) d7Count = 0;
+        }
+
+        var retentionD1 = regNum > 0 ? d1Count / regNum : 0;
+        var retentionD7 = regNum > 0 ? d7Count / regNum : 0;
 
         var lines = [];
         lines.push("  {");
+        lines.push('    month: "' + monthKey + '",');
         lines.push('    date: "' + dateStr + '",');
         lines.push('    country: "' + country + '",');
-        lines.push('    media: "' + media + '",');
-        lines.push('    productType: "' + productType + '",');
-
-        Object.keys(colMap).forEach(function (key) {
-          var colIdx = colMap[key];
-          if (colIdx < 0) return;
-          var v = r[colIdx];
-          var jsNum = formatJsNumber(v);
-          lines.push("    " + key + ": " + jsNum + ",");
-        });
-
+        lines.push("    regs: " + formatJsNumber(cellValue("registration")) + ",");
+        lines.push("    d0Payers: " + formatJsNumber(cellValue("d0Payers")) + ",");
+        lines.push("    d7Payers: " + formatJsNumber(cellValue("d7Payers")) + ",");
+        lines.push(
+          "    ggrSportsD0: " + formatJsNumber(cellValue("ggrSportsD0")) + ","
+        );
+        lines.push(
+          "    ggrSportsD7: " + formatJsNumber(cellValue("ggrSportsD7")) + ","
+        );
+        lines.push(
+          "    ggrGamesD0: " + formatJsNumber(cellValue("ggrGamesD0")) + ","
+        );
+        lines.push(
+          "    ggrGamesD7: " + formatJsNumber(cellValue("ggrGamesD7")) + ","
+        );
+        lines.push(
+          "    sportsPlayers: " +
+            formatJsNumber(cellValue("sportsPlayers")) +
+            ","
+        );
+        lines.push(
+          "    gamesPlayers: " +
+            formatJsNumber(cellValue("gamesPlayers")) +
+            ","
+        );
+        lines.push("    retentionD1: " + formatJsNumber(retentionD1) + ",");
+        lines.push("    retentionD7: " + formatJsNumber(retentionD7) + ",");
+        lines.push("    spend: " + formatJsNumber(cellValue("spent")) + ",");
+        lines.push(
+          '    media: "' + media.replace(/"/g, '\\"') + '",'
+        );
+        lines.push(
+          '    productType: "' + productType.replace(/"/g, '\\"') + '",'
+        );
         lines.push("  }");
 
         if (!monthMap[monthKey]) monthMap[monthKey] = [];
@@ -606,7 +753,9 @@
 
       var out = [];
       monthKeys.forEach(function (mk, idx) {
-        out.push("// ===== " + mk + " 买量（粘贴到 RAW_PAID_BY_MONTH 对象里） =====");
+        out.push(
+          "// ===== " + mk + " 买量（粘贴到买量月度看板数据对象中） ====="
+        );
         out.push('"' + mk + '": [');
         out.push(monthMap[mk].join(",\n"));
         out.push("]");
@@ -666,7 +815,9 @@
           }
           readWorkbookFromFile(orgInput.files[0], function (err, wb) {
             if (err) {
-              orgOut.value = "// 解析自然量 Excel 出错：\\n// " + (err.message || String(err));
+              orgOut.value =
+                "// 解析自然量 Excel 出错：\n// " +
+                (err.message || String(err));
               return;
             }
             orgOut.value = buildOrganicCode(wb);
@@ -687,7 +838,9 @@
           }
           readWorkbookFromFile(paidInput.files[0], function (err, wb) {
             if (err) {
-              paidOut.value = "// 解析买量 Excel 出错：\\n// " + (err.message || String(err));
+              paidOut.value =
+                "// 解析买量 Excel 出错：\n// " +
+                (err.message || String(err));
               return;
             }
             paidOut.value = buildPaidCode(wb);
