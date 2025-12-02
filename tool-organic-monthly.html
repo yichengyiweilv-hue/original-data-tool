@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <title>月自然量数据源 → JS 代码生成工具</title>
+  <title>月自然量 Excel → JS 源数据处理工具</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
@@ -13,274 +13,308 @@
       --border-soft: #d1d5db;
       --text-main: #111827;
       --text-sub: #6b7280;
-      --accent: #2563eb;
-      --accent-soft: rgba(37, 99, 235, 0.08);
+      --accent: #0ea5e9;
+      --accent-soft: rgba(14,165,233,0.08);
+      --accent-strong: #0284c7;
+      --radius-lg: 16px;
+      --radius-md: 10px;
     }
 
     * { box-sizing: border-box; }
 
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-        sans-serif;
+      padding: 16px;
       background: var(--bg);
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft Yahei",sans-serif;
       color: var(--text-main);
       -webkit-font-smoothing: antialiased;
     }
 
     .page {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
-      padding: 24px 16px 40px;
     }
 
-    h1 {
-      margin: 0 0 6px;
-      font-size: 20px;
-      font-weight: 650;
+    .header {
+      margin-bottom: 16px;
+      padding: 16px 18px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      background: #ffffff;
+      box-shadow: 0 8px 20px rgba(148,163,184,0.25);
     }
 
-    p {
-      margin: 0 0 6px;
-      font-size: 13px;
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+
+    .header-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+
+    .header-note {
+      font-size: 11px;
       color: var(--text-sub);
       line-height: 1.6;
     }
 
-    code {
-      font-family: SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas,
-        "Liberation Mono", "Courier New", monospace;
-      font-size: 11px;
-      background: #f3f4f6;
-      padding: 1px 4px;
-      border-radius: 4px;
-    }
-
-    .card {
-      margin-top: 14px;
-      padding: 14px 16px 16px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-    }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin: 10px 0 8px;
-    }
-
-    .field {
-      flex: 1 1 260px;
-      min-width: 0;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-main);
-    }
-
-    .input-box {
-      width: 100%;
-      padding: 7px 9px;
-      border-radius: 8px;
-      border: 1px solid var(--border-soft);
-      font-size: 13px;
-      background: #ffffff;
-    }
-
-    .input-box:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15);
-    }
-
-    input[type="file"] {
-      padding: 3px 0;
-      border: none;
-      box-shadow: none;
-    }
-
-    .small-tip {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-top: 4px;
-    }
-
-    .btn-row {
+    .badge-row {
+      margin-top: 8px;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin: 4px 0 8px;
     }
 
-    button {
+    .badge {
+      font-size: 10px;
       border-radius: 999px;
-      border: 1px solid var(--border-soft);
-      background: #f3f4f6;
-      font-size: 13px;
-      padding: 7px 14px;
-      cursor: pointer;
+      padding: 3px 8px;
+      border: 1px solid #cbd5f5;
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+
+    .card {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: 0 6px 16px rgba(15,23,42,0.06);
+      padding: 12px 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 260px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 14px;
       font-weight: 500;
-      color: var(--text-main);
-      transition: all 0.15s ease-out;
+      color: #111827;
     }
 
-    button.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #ffffff;
-    }
-
-    button.primary:hover {
-      background: #1d4ed8;
-      border-color: #1d4ed8;
-      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.25);
-      transform: translateY(-0.5px);
-    }
-
-    button:hover:not(:disabled):not(.primary) {
-      background: #e5e7eb;
-      border-color: #cbd5f5;
-      transform: translateY(-0.5px);
-      box-shadow: 0 8px 18px rgba(148, 163, 184, 0.35);
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: default;
-      box-shadow: none;
-      transform: none;
-    }
-
-    #status {
-      font-size: 12px;
+    .card-sub {
+      font-size: 11px;
       color: var(--text-sub);
-      margin: 2px 0 6px;
+      margin-top: 2px;
+    }
+
+    .file-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    .file-input {
+      font-size: 11px;
+      color: var(--text-main);
+    }
+
+    input[type="file"] {
+      max-width: 260px;
+    }
+
+    .btn-copy,
+    .btn-generate {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+    }
+
+    .btn-copy {
+      border-color: var(--border-soft);
+      color: var(--text-sub);
+      background: #f9fafb;
+    }
+
+    .btn-copy:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
+
+    .btn-generate {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
+
+    .btn-generate:hover {
+      background: rgba(14,165,233,0.16);
+      border-color: var(--accent-strong);
+    }
+
+    .output {
+      flex: 1;
+      min-height: 200px;
+      margin-top: 4px;
     }
 
     textarea {
       width: 100%;
-      min-height: 260px;
-      border-radius: 8px;
+      height: 100%;
+      border-radius: var(--radius-md);
       border: 1px solid var(--border-soft);
-      padding: 8px 9px;
-      font-family: SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas,
-        "Liberation Mono", "Courier New", monospace;
+      background: #f9fafb;
+      color: var(--text-main);
       font-size: 11px;
-      line-height: 1.45;
+      padding: 8px;
       resize: vertical;
-      background: #0f172a;
-      color: #e5e7eb;
+      font-family: Menlo, Consolas, "SF Mono", monospace;
+      line-height: 1.5;
       outline: none;
+      white-space: pre;
     }
 
     textarea::placeholder {
       color: #9ca3af;
     }
+
+    .hint {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .hint strong {
+      color: #111827;
+    }
+
+    .footer {
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--text-sub);
+      text-align: right;
+      border-top: 1px dashed var(--border-soft);
+      padding-top: 6px;
+    }
   </style>
 </head>
 <body>
   <div class="page">
-    <h1>月自然量数据源 → JS 代码生成工具</h1>
-    <p>
-      上传当月自然量 Excel（按国家 × 日期），自动生成
-      <code>"YYYY-MM": [ &#123; ... &#125; ]</code> 片段，直接粘贴进看板的
-      数据源对象。
-    </p>
-    <p class="small-tip">
-      默认读取 sheet 名为 <code>zrl_country_monthly</code>，如果不存在则使用第 1 个
-      sheet。第 1 行为表头（含 <code>date</code> / <code>country</code> /
-      <code>注册人数</code> 等），第 2 行若为英文字段说明会被自动跳过。
-    </p>
+    <header class="header">
+      <div class="header-title">月自然量 Excel → JS 源数据处理工具</div>
+      <div class="header-sub">
+        上传某个月的自然量 Excel，点击「生成自然量 code」，得到可以直接粘贴到
+        <code>RAW_ORGANIC_BY_MONTH</code> 的 <code>"YYYY-MM": [ { ... } ]</code> 片段。
+      </div>
+      <div class="header-note">
+        · sheet 名默认 <strong>zrl_country_monthly</strong>，第 1 行为字段名，至少包含
+        <code>date</code> / <code>country</code> / <code>registration</code> /
+        <code>D0_unique_purchase</code> / <code>D0_SPORTS_BET_FLOW</code> 等列。<br />
+        · 工具按 <code>date</code> 自动分组为多个 <code>"YYYY-MM"</code> 段，字段名与看板中使用的一致。
+      </div>
+      <div class="badge-row">
+        <span class="badge">白色背景 · 纯前端 · 直接丢 GitHub Pages</span>
+        <span class="badge">字段名使用英文，与示例 code 对齐</span>
+      </div>
+    </header>
 
-    <section class="card">
-      <div class="row">
-        <div class="field">
-          <label for="fileInput">自然量 Excel 文件</label>
-          <input
-            id="fileInput"
-            class="input-box"
-            type="file"
-            accept=".xlsx,.xls"
-          />
-          <div class="small-tip">
-            示例：2025-10 整月数据，表头至少包含
-            <code>date</code>、<code>country</code>、
-            <code>注册人数</code>、<code>D0充值人数</code> 等字段。
+    <main>
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">自然量单月数据 → JS 片段</div>
+            <div class="card-sub">
+              输出格式：<code>"YYYY-MM": [ { date, country, registration, ... } ]</code>，
+              直接粘贴到 <code>RAW_ORGANIC_BY_MONTH</code> 内部。
+            </div>
           </div>
+          <button type="button" class="btn-copy" id="copy-org">复制自然量 code</button>
         </div>
-      </div>
 
-      <div class="btn-row">
-        <button id="generateBtn" class="primary" type="button">
-          生成 code
-        </button>
-        <button id="copyBtn" type="button" disabled>一键复制</button>
-      </div>
+        <div class="file-row">
+          <span>自然量 Excel：</span>
+          <input type="file" id="organic-file" class="file-input" accept=".xlsx,.xls" />
+          <button type="button" class="btn-generate" id="gen-org">生成自然量 code</button>
+        </div>
 
-      <div id="status">状态：等待上传自然量 Excel 文件。</div>
+        <div class="hint">
+          · 要求：表头至少包含 <strong>date</strong>、<strong>country</strong>、
+          <strong>registration</strong>、<strong>D0_unique_purchase</strong>、
+          <strong>D0_SPORTS_BET_FLOW</strong> 等英文字段。<br />
+          · 如一个文件包含多个月数据，会按日期自动拆成多段 <code>"YYYY-MM": [ ... ]</code>。
+        </div>
 
-      <textarea
-        id="output"
-        readonly
-        spellcheck="false"
-        placeholder='// 上传自然量 Excel 后，点击「生成 code」，这里会生成类似：
-//
-// "2025-09": [
-//   {
-//     date: "2025-09-01", // YYYY-MM-DD
-//     country: "GH",      // GH / KE / NG / TZ / UG
-//
-//     // 注册 & 付费（D0）
-//     registration: 302,
-//     D0_unique_purchase: 138,
-//     D0_PURCHASE_VALUE: 561.46,
-//
-//     // 投注人数（D0）
-//     D0_TOTAL_BET_PLACED_USER: 139,
-//     D0_SPORTS_BET_PLACED_USER: 64,
-//     D0_GAMES_BET_PLACED_USER: 104,
-//
-//     // 流水（D0）
-//     D0_SPORTS_BET_FLOW: 93.48,
-//     D0_GAMES_BET_FLOW: 2211.0,
-//     D0_TOTAL_BET_FLOW: 2304.49,
-//
-//     // 付费 & 投注（D7）
-//     D7_unique_purchase: 172,
-//     D7_PURCHASE_VALUE: 3002.0,
-//     D7_TOTAL_BET_PLACED_USER: 177,
-//     D7_SPORTS_BET_PLACED_USER: 108,
-//     D7_GAMES_BET_PLACED_USER: 138,
-//
-//     // 流水（D7）
-//     D7_SPORTS_BET_FLOW: 532.02,
-//     D7_GAMES_BET_FLOW: 16393.33,
-//     D7_TOTAL_BET_FLOW: 16925.36,
-//
-//     // 留存
-//     D1_retained_users: 139,
-//     D7_retained_users: 61,
-//   },
-//   // ... 其他日期 × 国家
-// ],'
-      ></textarea>
-    </section>
+        <div class="output">
+          <textarea
+            id="organic-output"
+            placeholder='上传自然量 Excel 后，点击「生成自然量 code」，这里会生成类似：
+
+// ===== 2025-10 自然量（粘贴到 RAW_ORGANIC_BY_MONTH 对象里） =====
+"2025-10": [
+  {
+    date: "2025-10-01", // YYYY-MM-DD
+    country: "GH", // GH / KE / NG / TZ / UG
+
+    // 注册 & 付费（D0）
+    registration: 302,
+    D0_unique_purchase: 138,
+    D0_PURCHASE_VALUE: 561.46,
+
+    // 投注人数（D0）
+    D0_TOTAL_BET_PLACED_USER: 139,
+    D0_SPORTS_BET_PLACED_USER: 64,
+    D0_GAMES_BET_PLACED_USER: 104,
+
+    // 流水（D0）
+    D0_SPORTS_BET_FLOW: 93.48,
+    D0_GAMES_BET_FLOW: 2211.0,
+    D0_TOTAL_BET_FLOW: 2304.49,
+
+    // 付费 & 投注（D7）
+    D7_unique_purchase: 172,
+    D7_PURCHASE_VALUE: 3002.0,
+    D7_TOTAL_BET_PLACED_USER: 177,
+    D7_SPORTS_BET_PLACED_USER: 108,
+    D7_GAMES_BET_PLACED_USER: 138,
+
+    // 流水（D7）
+    D7_SPORTS_BET_FLOW: 532.02,
+    D7_GAMES_BET_FLOW: 16393.33,
+    D7_TOTAL_BET_FLOW: 16925.36,
+
+    // 留存
+    D1_retained_users: 139,
+    D7_retained_users: 61,
+  }
+]'
+          ></textarea>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      使用建议：每月导出自然量 Excel 后，用本页面生成对应月份 JS 片段，直接粘贴到月自然量看板的数据源区域。
+    </footer>
   </div>
 
-  <!-- 使用和你现有工具相同版本的 XLSX 库 -->
+  <!-- XLSX 解析库：在线 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <script>
-    // 数字格式，与现有工具保持一致
+    // 数字格式化：尽量还原整数 / 两位小数
     function formatJsNumber(value) {
       if (value === null || value === undefined || value === "") return "0";
       var num = Number(value);
@@ -291,11 +325,11 @@
       return num.toFixed(2).replace(/\.00$/, "");
     }
 
-    // 和「买量&自然量」工具同源的日期处理，避免时区减一天
+    // 通用日期格式化，避免时区影响
     function normalizeDateCell(v) {
       if (v === null || v === undefined || v === "") return null;
 
-      // 1）Date 对象：用本地年月日
+      // JS Date 对象
       if (v instanceof Date) {
         var y = v.getFullYear();
         var m = String(v.getMonth() + 1).padStart(2, "0");
@@ -303,7 +337,7 @@
         return y + "-" + m + "-" + d;
       }
 
-      // 2）Excel 数字日期（序列号）
+      // 纯数字（Excel 底层日期）
       if (typeof v === "number") {
         if (typeof XLSX !== "undefined" && XLSX.SSF && XLSX.SSF.parse_date_code) {
           var o = XLSX.SSF.parse_date_code(v);
@@ -316,7 +350,7 @@
         }
       }
 
-      // 3）字符串日期：2025-10-01 / 2025/10/1 等
+      // 字符串日期，如 "2025-10-01" 或 "2025/10/01 00:00:00"
       if (typeof v === "string") {
         var m = v.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
         if (m) {
@@ -330,225 +364,120 @@
       return null;
     }
 
-    // 从工作簿构造月自然量代码（按照你给的示例结构）
+    // 只处理自然量：字段名使用英文表头
     function buildOrganicCode(workbook) {
       var sheet =
-        workbook.Sheets["zrl_country_monthly"] ||
-        workbook.Sheets[workbook.SheetNames[0]];
+        workbook.Sheets["zrl_country_monthly"] || workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
         return "// 未找到 sheet：zrl_country_monthly（或第一个 sheet 为空）";
       }
 
-      // 和旧工具一致：header: 1 → 第一行当表头，后续行是数组
-      var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+      // 直接按字段名输出对象，每行是一个 { date, country, registration, ... }
+      var rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
       if (!rows || !rows.length) {
         return "// 表内没有数据";
       }
 
-      var header = rows[0] || [];
-      function idx(name) {
-        return header.indexOf(name);
-      }
-
-      var idxDate = idx("date");
-      var idxCountry = idx("country");
-
-      if (idxDate < 0 || idxCountry < 0) {
-        return "// 表头缺少必需字段：date / country";
-      }
-
-      // 中文表头 → 看板字段名映射
-      var colMap = {
-        registration: idx("注册人数"),
-        D0_unique_purchase: idx("D0充值人数"),
-        D7_unique_purchase: idx("D7充值人数"),
-        D0_PURCHASE_VALUE: idx("D0充值金额"),
-        D7_PURCHASE_VALUE: idx("D7充值金额"),
-        D0_TOTAL_BET_PLACED_USER: idx("D0下注人数"),
-        D7_TOTAL_BET_PLACED_USER: idx("D7下注人数"),
-        D0_SPORTS_BET_PLACED_USER: idx("D0体育下注人数"),
-        D0_GAMES_BET_PLACED_USER: idx("D0游戏下注人数"),
-        D7_SPORTS_BET_PLACED_USER: idx("D7体育下注人数"),
-        D7_GAMES_BET_PLACED_USER: idx("D7游戏下注人数"),
-        D0_SPORTS_BET_FLOW: idx("D0体育流水"),
-        D0_GAMES_BET_FLOW: idx("D0游戏流水"),
-        D0_TOTAL_BET_FLOW: idx("D0总流水"),
-        D7_SPORTS_BET_FLOW: idx("D7体育流水"),
-        D7_GAMES_BET_FLOW: idx("D7游戏流水"),
-        D7_TOTAL_BET_FLOW: idx("D7总流水"),
-        D1_retained_users: idx("次日登录人数"),
-        D7_retained_users: idx("七日登录人数"),
-      };
-
-      // monthKey → 若干天数据的代码片段
       var monthMap = {};
 
-      for (var i = 1; i < rows.length; i++) {
-        var r = rows[i];
-        if (!r || !r.length) continue;
+      rows.forEach(function (row) {
+        var dateStr = normalizeDateCell(row.date);
+        if (!dateStr) return;
 
-        var rawDate = r[idxDate];
-        var dateStr = normalizeDateCell(rawDate);
-        if (!dateStr) continue;
-
-        var rawCountry = r[idxCountry];
-        if (!rawCountry) continue;
+        var rawCountry = row.country;
+        if (!rawCountry) return;
         var country = String(rawCountry).trim().toUpperCase();
 
         var monthKey = dateStr.slice(0, 7);
 
-        // 单行取数函数
-        function numVal(fieldKey) {
-          var colIdx = colMap[fieldKey];
-          if (colIdx === undefined || colIdx === null || colIdx < 0) {
-            return "0";
-          }
-          var v = r[colIdx];
-          return formatJsNumber(v);
-        }
-
-        var indent1 = "  ";
-        var indent2 = "    ";
         var lines = [];
-
-        lines.push(indent1 + "{");
-        lines.push(indent2 + 'date: "' + dateStr + '", // YYYY-MM-DD');
+        lines.push("  {");
+        lines.push('    date: "' + dateStr + '", // YYYY-MM-DD');
+        lines.push('    country: "' + country + '", // GH / KE / NG / TZ / UG');
+        lines.push("");
+        lines.push("    // 注册 & 付费（D0）");
+        lines.push("    registration: " + formatJsNumber(row.registration) + ",");
         lines.push(
-          indent2 + 'country: "' + country + '", // GH / KE / NG / TZ / UG'
+          "    D0_unique_purchase: " + formatJsNumber(row.D0_unique_purchase) + ","
+        );
+        lines.push(
+          "    D0_PURCHASE_VALUE: " + formatJsNumber(row.D0_PURCHASE_VALUE) + ","
         );
         lines.push("");
-
-        // 注册 & 付费（D0）
-        lines.push(indent2 + "// 注册 & 付费（D0）");
-        lines.push(indent2 + "registration: " + numVal("registration") + ",");
+        lines.push("    // 投注人数（D0）");
         lines.push(
-          indent2 +
-            "D0_unique_purchase: " +
-            numVal("D0_unique_purchase") +
-            ",",
+          "    D0_TOTAL_BET_PLACED_USER: " +
+            formatJsNumber(row.D0_TOTAL_BET_PLACED_USER) +
+            ","
         );
         lines.push(
-          indent2 + "D0_PURCHASE_VALUE: " + numVal("D0_PURCHASE_VALUE") + ",",
-        );
-        lines.push("");
-
-        // 投注人数（D0）
-        lines.push(indent2 + "// 投注人数（D0）");
-        lines.push(
-          indent2 +
-            "D0_TOTAL_BET_PLACED_USER: " +
-            numVal("D0_TOTAL_BET_PLACED_USER") +
-            ",",
+          "    D0_SPORTS_BET_PLACED_USER: " +
+            formatJsNumber(row.D0_SPORTS_BET_PLACED_USER) +
+            ","
         );
         lines.push(
-          indent2 +
-            "D0_SPORTS_BET_PLACED_USER: " +
-            numVal("D0_SPORTS_BET_PLACED_USER") +
-            ",",
-        );
-        lines.push(
-          indent2 +
-            "D0_GAMES_BET_PLACED_USER: " +
-            numVal("D0_GAMES_BET_PLACED_USER") +
-            ",",
+          "    D0_GAMES_BET_PLACED_USER: " +
+            formatJsNumber(row.D0_GAMES_BET_PLACED_USER) +
+            ","
         );
         lines.push("");
-
-        // 流水（D0）
-        lines.push(indent2 + "// 流水（D0）");
+        lines.push("    // 流水（D0）");
         lines.push(
-          indent2 +
-            "D0_SPORTS_BET_FLOW: " +
-            numVal("D0_SPORTS_BET_FLOW") +
-            ",",
+          "    D0_SPORTS_BET_FLOW: " + formatJsNumber(row.D0_SPORTS_BET_FLOW) + ","
         );
         lines.push(
-          indent2 +
-            "D0_GAMES_BET_FLOW: " +
-            numVal("D0_GAMES_BET_FLOW") +
-            ",",
+          "    D0_GAMES_BET_FLOW: " + formatJsNumber(row.D0_GAMES_BET_FLOW) + ","
         );
         lines.push(
-          indent2 +
-            "D0_TOTAL_BET_FLOW: " +
-            numVal("D0_TOTAL_BET_FLOW") +
-            ",",
+          "    D0_TOTAL_BET_FLOW: " + formatJsNumber(row.D0_TOTAL_BET_FLOW) + ","
         );
         lines.push("");
-
-        // 付费 & 投注（D7）
-        lines.push(indent2 + "// 付费 & 投注（D7）");
+        lines.push("    // 付费 & 投注（D7）");
         lines.push(
-          indent2 +
-            "D7_unique_purchase: " +
-            numVal("D7_unique_purchase") +
-            ",",
+          "    D7_unique_purchase: " + formatJsNumber(row.D7_unique_purchase) + ","
         );
         lines.push(
-          indent2 + "D7_PURCHASE_VALUE: " + numVal("D7_PURCHASE_VALUE") + ",",
+          "    D7_PURCHASE_VALUE: " + formatJsNumber(row.D7_PURCHASE_VALUE) + ","
         );
         lines.push(
-          indent2 +
-            "D7_TOTAL_BET_PLACED_USER: " +
-            numVal("D7_TOTAL_BET_PLACED_USER") +
-            ",",
+          "    D7_TOTAL_BET_PLACED_USER: " +
+            formatJsNumber(row.D7_TOTAL_BET_PLACED_USER) +
+            ","
         );
         lines.push(
-          indent2 +
-            "D7_SPORTS_BET_PLACED_USER: " +
-            numVal("D7_SPORTS_BET_PLACED_USER") +
-            ",",
+          "    D7_SPORTS_BET_PLACED_USER: " +
+            formatJsNumber(row.D7_SPORTS_BET_PLACED_USER) +
+            ","
         );
         lines.push(
-          indent2 +
-            "D7_GAMES_BET_PLACED_USER: " +
-            numVal("D7_GAMES_BET_PLACED_USER") +
-            ",",
+          "    D7_GAMES_BET_PLACED_USER: " +
+            formatJsNumber(row.D7_GAMES_BET_PLACED_USER) +
+            ","
         );
         lines.push("");
-
-        // 流水（D7）
-        lines.push(indent2 + "// 流水（D7）");
+        lines.push("    // 流水（D7）");
         lines.push(
-          indent2 +
-            "D7_SPORTS_BET_FLOW: " +
-            numVal("D7_SPORTS_BET_FLOW") +
-            ",",
+          "    D7_SPORTS_BET_FLOW: " + formatJsNumber(row.D7_SPORTS_BET_FLOW) + ","
         );
         lines.push(
-          indent2 +
-            "D7_GAMES_BET_FLOW: " +
-            numVal("D7_GAMES_BET_FLOW") +
-            ",",
+          "    D7_GAMES_BET_FLOW: " + formatJsNumber(row.D7_GAMES_BET_FLOW) + ","
         );
         lines.push(
-          indent2 +
-            "D7_TOTAL_BET_FLOW: " +
-            numVal("D7_TOTAL_BET_FLOW") +
-            ",",
+          "    D7_TOTAL_BET_FLOW: " + formatJsNumber(row.D7_TOTAL_BET_FLOW) + ","
         );
         lines.push("");
-
-        // 留存
-        lines.push(indent2 + "// 留存");
+        lines.push("    // 留存");
         lines.push(
-          indent2 +
-            "D1_retained_users: " +
-            numVal("D1_retained_users") +
-            ",",
+          "    D1_retained_users: " + formatJsNumber(row.D1_retained_users) + ","
         );
         lines.push(
-          indent2 +
-            "D7_retained_users: " +
-            numVal("D7_retained_users") +
-            ",",
+          "    D7_retained_users: " + formatJsNumber(row.D7_retained_users) + ","
         );
-
-        lines.push(indent1 + "},");
+        lines.push("  }");
 
         if (!monthMap[monthKey]) monthMap[monthKey] = [];
         monthMap[monthKey].push(lines.join("\n"));
-      }
+      });
 
       var monthKeys = Object.keys(monthMap).sort();
       if (!monthKeys.length) {
@@ -557,9 +486,12 @@
 
       var out = [];
       monthKeys.forEach(function (mk, idx) {
+        out.push(
+          "// ===== " + mk + " 自然量（粘贴到 RAW_ORGANIC_BY_MONTH 对象里） ====="
+        );
         out.push('"' + mk + '": [');
-        out.push(monthMap[mk].join("\n\n"));
-        out.push("],");
+        out.push(monthMap[mk].join(",\n\n"));
+        out.push("]");
         if (idx < monthKeys.length - 1) {
           out.push("");
           out.push("");
@@ -569,7 +501,6 @@
       return out.join("\n");
     }
 
-    // 通用：从文件读取工作簿（与旧工具一致）
     function readWorkbookFromFile(file, onDone) {
       var reader = new FileReader();
       reader.onload = function (evt) {
@@ -587,93 +518,49 @@
       reader.readAsArrayBuffer(file);
     }
 
-    // 一键复制
-    function bindCopyButton(btnId, textareaId, setStatus) {
+    function bindCopyButton(btnId, textareaId) {
       var btn = document.getElementById(btnId);
       var ta = document.getElementById(textareaId);
       if (!btn || !ta) return;
 
       btn.addEventListener("click", function () {
-        if (!ta.value) {
-          setStatus && setStatus("当前没有可复制内容。");
-          return;
-        }
-
-        function fallbackCopy() {
-          ta.focus();
-          ta.select();
-          try {
-            document.execCommand("copy");
-            setStatus &&
-              setStatus("已复制到剪贴板，可以粘贴到看板源码中。");
-          } catch (e) {
-            setStatus && setStatus("浏览器不支持自动复制，请手动 Ctrl+C。");
-          }
-        }
-
+        if (!ta.value) return;
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard
-            .writeText(ta.value)
-            .then(function () {
-              setStatus &&
-                setStatus("已复制到剪贴板，可以粘贴到看板源码中。");
-            })
-            .catch(function () {
-              fallbackCopy();
-            });
+          navigator.clipboard.writeText(ta.value).catch(function () {});
         } else {
-          fallbackCopy();
+          ta.select();
+          document.execCommand("copy");
         }
       });
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-      var fileInput = document.getElementById("fileInput");
-      var output = document.getElementById("output");
-      var generateBtn = document.getElementById("generateBtn");
-      var copyBtn = document.getElementById("copyBtn");
-      var statusEl = document.getElementById("status");
+    function bindGenerateButton() {
+      var orgBtn = document.getElementById("gen-org");
+      var orgInput = document.getElementById("organic-file");
+      var orgOut = document.getElementById("organic-output");
 
-      function setStatus(msg) {
-        statusEl.textContent = "状态：" + msg;
-      }
-
-      bindCopyButton("copyBtn", "output", setStatus);
-
-      generateBtn.addEventListener("click", function () {
-        output.value = "";
-        copyBtn.disabled = true;
-
-        if (!fileInput.files || !fileInput.files[0]) {
-          setStatus("请先选择自然量 Excel 文件。");
-          output.value = "// 请先选择自然量 Excel 文件";
-          return;
-        }
-
-        setStatus("解析 Excel 中...");
-        readWorkbookFromFile(fileInput.files[0], function (err, wb) {
-          if (err) {
-            output.value =
-              "// 解析自然量 Excel 出错：\n// " +
-              (err.message || String(err));
-            setStatus("解析自然量 Excel 出错，请检查文件格式。");
-            copyBtn.disabled = true;
+      if (orgBtn && orgInput && orgOut) {
+        orgBtn.addEventListener("click", function () {
+          orgOut.value = "";
+          if (!orgInput.files || !orgInput.files[0]) {
+            orgOut.value = "// 请先选择自然量 Excel 文件";
             return;
           }
-
-          var code = buildOrganicCode(wb);
-          output.value = code;
-          if (code && !/^\/\/ /.test(code.trim())) {
-            copyBtn.disabled = false;
-            setStatus(
-              "生成完成，如文件为单月数据，首行日期应是该月 1 号（如 2025-10-01）。"
-            );
-          } else {
-            copyBtn.disabled = true;
-            setStatus("生成完成，但未读到有效数据，请检查表头和日期列。");
-          }
+          readWorkbookFromFile(orgInput.files[0], function (err, wb) {
+            if (err) {
+              orgOut.value =
+                "// 解析自然量 Excel 出错：\n// " + (err.message || String(err));
+              return;
+            }
+            orgOut.value = buildOrganicCode(wb);
+          });
         });
-      });
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      bindGenerateButton();
+      bindCopyButton("copy-org", "organic-output");
     });
   </script>
 </body>
