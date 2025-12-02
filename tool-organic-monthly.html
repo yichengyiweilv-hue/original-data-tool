@@ -757,22 +757,62 @@
         return null;
       }
 
+            // 统一把各种日期（Date / 数字序列号 / 字符串）转成 YYYY-MM-DD
       function normalizeDate(value) {
-        if (value === null || typeof value === "undefined" || value === "") {
+        if (value === null || value === undefined || value === "") {
           return "";
         }
 
-        // 1）SheetJS Date 对象：用 UTC 口径转 "YYYY-MM-DD"
-        if (
-          Object.prototype.toString.call(value) === "[object Date]" &&
-          typeof value.toISOString === "function"
-        ) {
+        // 1）JS Date 对象：用本地年月日，避免 toISOString 带来的时区减一天
+        if (Object.prototype.toString.call(value) === "[object Date]") {
+          const y = value.getFullYear();
+          const m = pad2(value.getMonth() + 1);
+          const d = pad2(value.getDate());
+          return y + "-" + m + "-" + d;
+        }
+
+        // 2）Excel 数字日期（少见，但兜底一下）
+        if (typeof value === "number" && Number.isFinite(value)) {
           try {
-            return value.toISOString().slice(0, 10);
+            if (
+              typeof XLSX !== "undefined" &&
+              XLSX.SSF &&
+              typeof XLSX.SSF.parse_date_code === "function"
+            ) {
+              const o = XLSX.SSF.parse_date_code(value);
+              if (o && o.y && o.m && o.d) {
+                const y = o.y;
+                const m = pad2(o.m);
+                const d = pad2(o.d);
+                return y + "-" + m + "-" + d;
+              }
+            }
           } catch (e) {
-            // ignore
+            // 失败就走字符串逻辑
           }
         }
+
+        // 3）字符串日期：支持 2025-10-01 / 2025/10/1 / 2025.10.1
+        const s = String(value).trim();
+        const m = s.replace(/[./]/g, "-").match(
+          /(\d{4})-(\d{1,2})-(\d{1,2})/
+        );
+        if (m) {
+          const yyyy = m[1];
+          const mm = pad2(m[2]);
+          const dd = pad2(m[3]);
+          return yyyy + "-" + mm + "-" + dd;
+        }
+
+        // 4）如果是类似 2025-10 这样的，就补成 01 号
+        if (/^\d{4}-\d{2}$/.test(s)) {
+          return s + "-01";
+        }
+
+        // 5）兜底：原样返回
+        return s;
+      }
+
 
         // 2）Excel 序列号
         if (typeof value === "number" && isFinite(value)) {
