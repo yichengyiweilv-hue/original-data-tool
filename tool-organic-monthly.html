@@ -2,34 +2,29 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <title>自然量月度源数据 · 代码生成工具</title>
+  <title>自然量月度数据 · 源数据处理工具</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta
     name="description"
-    content="BangBet Africa · 自然量月度数据源 → 看板代码生成工具"
+    content="将自然量月度 Excel 源数据转换为看板使用的代码结构"
   />
-  <link
-    rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-  />
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js"></script>
 
   <style>
     :root {
-      --bg-color: #ffffff;
-      --card-bg: #ffffff;
-      --border-subtle: rgba(15, 23, 42, 0.08);
+      --bg: #ffffff;
+      --border-subtle: #e5e7eb;
+      --border-strong: #d1d5db;
       --accent: #2563eb;
       --accent-soft: rgba(37, 99, 235, 0.08);
-      --accent-strong: rgba(37, 99, 235, 0.16);
-      --text-main: #0f172a;
-      --text-muted: #6b7280;
-      --success: #16a34a;
-      --error: #e11d48;
-      --radius-lg: 18px;
-      --radius-md: 12px;
-      --radius-pill: 999px;
-      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.06);
-      --transition-fast: 0.18s ease-out;
+      --text-main: #111827;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 8px;
+      --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.08);
     }
 
     * {
@@ -40,756 +35,747 @@
     body {
       margin: 0;
       padding: 0;
-      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
-      background: var(--bg-color);
+      background: var(--bg);
       color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+        sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
     body {
-      min-height: 100vh;
+      padding: 24px;
     }
 
     .page {
-      width: 100%;
-      max-width: 1200px;
+      max-width: 1040px;
       margin: 0 auto;
-      padding: 24px 16px 40px;
+    }
+
+    header.page-header {
+      margin-bottom: 24px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-    }
-
-    @media (min-width: 960px) {
-      .page {
-        padding: 28px 24px 48px;
-      }
-    }
-
-    /* 顶部栏 */
-
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       gap: 12px;
-      padding: 12px 18px;
-      border-radius: 999px;
-      background: #ffffff;
-      border: 1px solid var(--border-subtle);
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
     }
 
-    .brand {
+    .title-row {
       display: flex;
-      align-items: center;
+      flex-wrap: wrap;
+      align-items: baseline;
       gap: 10px;
     }
 
-    .brand-logo {
-      width: 30px;
-      height: 30px;
-      border-radius: 11px;
-      background: conic-gradient(
-        from 200deg,
-        #2563eb,
-        #22c55e,
-        #a855f7,
-        #2563eb
-      );
+    .page-title {
+      font-size: 22px;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+    }
+
+    .page-tag {
+      font-size: 13px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 2px 10px;
+      border: 1px solid rgba(37, 99, 235, 0.15);
+    }
+
+    .page-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .page-meta {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9),
-        0 10px 25px rgba(37, 99, 235, 0.35);
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
     }
 
-    .brand-logo span {
-      font-size: 17px;
-      font-weight: 700;
-      color: #f9fafb;
-      letter-spacing: 0.02em;
+    .meta-chip {
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px dashed var(--border-subtle);
+      background: #f9fafb;
     }
 
-    .brand-title {
+    .card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-card);
+      padding: 18px 18px 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card-title-block {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 6px;
     }
 
-    .brand-title-main {
+    .card-title-main {
       font-size: 16px;
       font-weight: 600;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
     }
 
-    .brand-title-sub {
+    .card-title-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
       font-size: 11px;
       color: var(--text-muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .env-badges {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
     }
 
     .pill {
-      padding: 4px 11px;
-      border-radius: var(--radius-pill);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      font-size: 11px;
-      color: var(--text-muted);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.96);
-    }
-
-    .pill span.dot {
-      width: 6px;
-      height: 6px;
+      padding: 3px 8px;
       border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+      border: 1px solid var(--border-subtle);
+      background: #f9fafb;
     }
 
-    /* 主体布局 */
-
-    .main {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    .badge-strong {
+      border-color: rgba(37, 99, 235, 0.25);
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
-    .tool-layout {
+    .form-grid {
       display: grid;
-      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.3fr);
-      gap: 18px;
-      align-items: flex-start;
+      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.2fr) minmax(0, 1.1fr);
+      gap: 12px;
+      margin-bottom: 16px;
     }
 
-    @media (max-width: 900px) {
-      .tool-layout {
+    @media (max-width: 800px) {
+      .form-grid {
         grid-template-columns: minmax(0, 1fr);
       }
     }
 
-    .tool-main {
-      background: var(--card-bg);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-soft);
-      padding: 18px 18px 16px;
-    }
-
-    .tool-side {
-      background: #ffffff;
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      padding: 14px 14px 12px;
-    }
-
-    .hero-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
-
-    .hero-kicker::before {
-      content: "";
-      width: 26px;
-      height: 1px;
-      border-radius: 999px;
-      background: linear-gradient(
-        to right,
-        rgba(148, 163, 184, 0.2),
-        rgba(148, 163, 184, 0.7)
-      );
-    }
-
-    .hero-title {
-      font-size: 22px;
-      font-weight: 640;
-      letter-spacing: 0.02em;
-      margin: 0 0 4px;
-    }
-
-    .hero-title span.highlight {
-      color: var(--accent);
-    }
-
-    .hero-desc {
-      margin: 0 0 10px;
-      font-size: 13px;
-      line-height: 1.7;
-      color: var(--text-muted);
-    }
-
-    .hero-meta {
+    .field {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .meta-tag {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: var(--radius-pill);
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid rgba(37, 99, 235, 0.25);
-    }
-
-    /* 表单区域 */
-
-    .tool-form {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .field-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .field-row-inline {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .field-row-inline .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex: 1 1 180px;
-      min-width: 0;
-    }
-
-    label {
       font-size: 12px;
+    }
+
+    .field-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .field-label {
       font-weight: 500;
-      color: #4b5563;
     }
 
-    .field-help {
-      margin: 0;
-      font-size: 11px;
+    .field-tip {
       color: var(--text-muted);
+      font-size: 11px;
     }
 
-    input[type="month"],
-    input[type="file"],
-    textarea {
+    .input,
+    select {
       font-family: inherit;
-      font-size: 13px;
-    }
-
-    input[type="month"],
-    input[type="text"] {
+      font-size: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-strong);
       padding: 7px 9px;
-      border-radius: 9px;
-      border: 1px solid rgba(148, 163, 184, 0.85);
       outline: none;
-      min-width: 0;
-      background: #f9fafb;
-      transition: border-color var(--transition-fast),
-        box-shadow var(--transition-fast),
-        background-color var(--transition-fast);
+      background: #ffffff;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease;
     }
 
-    input[type="month"]:focus,
-    input[type="text"]:focus {
+    .input:focus,
+    select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
-      background: #ffffff;
     }
 
     input[type="file"] {
-      padding: 4px 0;
+      padding: 5px 0;
+      border-radius: 0;
+      border: 0;
     }
 
-    .button-row {
+    .actions-row {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
+      margin-bottom: 10px;
     }
 
-    button {
-      border-radius: 999px;
+    .btn {
       border: 1px solid transparent;
-      font-size: 13px;
-      font-weight: 500;
+      border-radius: 999px;
       padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: background-color var(--transition-fast),
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast),
-        transform var(--transition-fast),
-        color var(--transition-fast);
-      background: #f9fafb;
-      color: #111827;
+      background: #f3f4f6;
+      color: var(--text-main);
+      transition: background 0.12s ease, border-color 0.12s ease,
+        transform 0.08s ease;
     }
 
-    button.primary {
+    .btn-primary {
       background: var(--accent);
-      color: #f9fafb;
-      border-color: rgba(37, 99, 235, 0.9);
-      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.35);
+      color: #ffffff;
+      border-color: var(--accent);
     }
 
-    button.primary:hover {
+    .btn-primary:hover {
       background: #1d4ed8;
-      transform: translateY(-1px);
-      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.45);
+      border-color: #1d4ed8;
+      transform: translateY(-0.5px);
     }
 
-    button.secondary {
+    .btn-outline {
       background: #ffffff;
-      border-color: rgba(148, 163, 184, 0.9);
-      color: #1f2933;
+      border-color: var(--border-strong);
     }
 
-    button.secondary:hover {
+    .btn-outline:hover {
       background: #f9fafb;
-      transform: translateY(-1px);
-      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+      transform: translateY(-0.5px);
     }
 
-    button:disabled {
+    .btn:disabled {
+      opacity: 0.55;
       cursor: default;
-      opacity: 0.5;
-      box-shadow: none;
       transform: none;
     }
 
-    button svg {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
+    .btn-icon {
+      font-size: 13px;
     }
 
-    .status-bar {
-      margin-top: 4px;
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .status-text {
       font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .status-text strong {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .status-right {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .output-wrapper {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-strong);
+      background: #f9fafb;
+      overflow: hidden;
+    }
+
+    .output-header {
       padding: 6px 9px;
-      border-radius: 9px;
-      border-left: 3px solid rgba(148, 163, 184, 0.8);
-      background: #f9fafb;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 11px;
       color: var(--text-muted);
-      min-height: 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .status-bar[data-type="success"] {
-      border-left-color: var(--success);
-      background: rgba(22, 163, 74, 0.06);
-      color: #166534;
-    }
-
-    .status-bar[data-type="error"] {
-      border-left-color: var(--error);
-      background: rgba(225, 29, 72, 0.05);
-      color: #9f1239;
-    }
-
-    .status-bar[data-type="info"] {
-      border-left-color: rgba(148, 163, 184, 0.9);
-      background: #f9fafb;
-      color: var(--text-muted);
+    .output-header span.code-label {
+      font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
     }
 
     textarea#output {
       width: 100%;
       min-height: 260px;
-      max-height: 480px;
+      border: none;
       resize: vertical;
-      padding: 10px 10px;
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(148, 163, 184, 0.85);
-      background: #0f172a;
-      color: #e5e7eb;
-      font-family: SFMono-Regular, ui-monospace, Menlo, Monaco, Consolas,
+      font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas,
         "Liberation Mono", "Courier New", monospace;
-      line-height: 1.6;
-      white-space: pre;
-      overflow: auto;
+      font-size: 11px;
+      line-height: 1.4;
+      padding: 9px;
+      background: #ffffff;
+      color: #111827;
+      outline: none;
     }
 
     textarea#output::placeholder {
-      color: #9ca3af;
-    }
-
-    .output-label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .output-label-row span {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    /* 侧边说明 */
-
-    .side-title {
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
-
-    .side-block {
-      margin-bottom: 10px;
-    }
-
-    .side-block-title {
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .side-list {
-      margin: 0;
-      padding-left: 16px;
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-
-    .side-list li + li {
-      margin-top: 2px;
-    }
-
-    .side-code-inline {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-        "Liberation Mono", "Courier New", monospace;
-      font-size: 11px;
-      background: #f3f4f6;
-      border-radius: 6px;
-      padding: 1px 4px;
-    }
-
-    footer {
-      margin-top: 4px;
-      font-size: 11px;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    footer span strong {
-      font-weight: 600;
-      color: #64748b;
+      color: #d1d5db;
     }
   </style>
 </head>
-
 <body>
   <div class="page">
-    <header class="top-bar">
-      <div class="brand">
-        <div class="brand-logo">
-          <span>BB</span>
-        </div>
-        <div class="brand-title">
-          <div class="brand-title-main">BangBet Growth Analytics</div>
-          <div class="brand-title-sub">Africa · GH · KE · NG · TZ</div>
-        </div>
+    <header class="page-header">
+      <div class="title-row">
+        <div class="page-title">自然量月度数据 · 源数据处理工具</div>
+        <div class="page-tag">工具 · 生成看板使用的 code 片段</div>
       </div>
-      <div class="env-badges">
-        <div class="pill">
-          <span class="dot"></span>
-          ORGANIC DATA TOOL
-        </div>
-        <div class="pill">
-          Monthly · Source → Code
-        </div>
+      <div class="page-desc">
+        上传当月自然量 Excel 源数据，一键生成
+        <code>"YYYY-MM": [ ... ],</code> 结构，直接复制到你的月度看板配置文件里。
+      </div>
+      <div class="page-meta">
+        <div class="meta-chip">输入：Excel 源数据（按日 × 国家）</div>
+        <div class="meta-chip">输出：月度 JSON 片段（含 date &amp; country）</div>
+        <div class="meta-chip">适用：GH / KE / NG / TZ / UG</div>
       </div>
     </header>
 
-    <main class="main">
-      <section class="tool-layout">
-        <!-- 主工具区域 -->
-        <section class="tool-main" aria-label="Organic monthly source data tool">
-          <div class="hero-kicker">Organic · Source Data</div>
-          <h1 class="hero-title">
-            自然量月度数据源<span class="highlight">代码生成工具</span>
-          </h1>
-          <p class="hero-desc">
-            上传当月自然量 Excel（首行为字段名），自动生成看板所需的
-            <code class="side-code-inline">"YYYY-MM": [ { ... } ]</code>
-            结构代码。字段顺序与注释与现有「月自然量数据源代码示例」保持一致。
-          </p>
-          <div class="hero-meta">
-            <span class="meta-tag">来源：自然量（GH / KE / NG / TZ / UG）</span>
-            <span class="meta-tag">周期：单月日度明细</span>
-            <span class="meta-tag">输出：JS 源数据代码片段</span>
+    <main class="card">
+      <div class="card-header">
+        <div class="card-title-block">
+          <div class="card-title-main">1. 选择文件 &amp; Sheet &amp; 月份</div>
+          <div class="card-title-sub">
+            默认假设首行是表头（含 <code>date</code> / <code>country</code> 等字段），从首行日期推断月份 key，
+            也可以手动改成你希望的 <code>YYYY-MM</code>。
+          </div>
+        </div>
+        <div class="pill-row">
+          <div class="pill badge-strong">日期自动按 UTC 处理，避免出现 9 月 30 日那种偏一天</div>
+          <div class="pill">字段名：默认沿用 Excel 表头</div>
+        </div>
+      </div>
+
+      <section aria-label="输入配置">
+        <div class="form-grid">
+          <div class="field">
+            <div class="field-label-row">
+              <label class="field-label" for="fileInput">1）上传当月 Excel 源数据</label>
+              <div class="field-tip" id="fileInfo">支持 .xlsx / .xls</div>
+            </div>
+            <input
+              id="fileInput"
+              class="input"
+              type="file"
+              accept=".xlsx,.xls"
+            />
           </div>
 
-          <div class="tool-form">
-            <!-- 月份 + 文件上传 -->
-            <div class="field-row-inline">
-              <div class="field-group">
-                <label for="monthInput">月份（外层 key，格式 YYYY-MM）</label>
-                <input
-                  type="month"
-                  id="monthInput"
-                  placeholder="例如：2025-09"
-                />
-                <p class="field-help">
-                  若留空，将尝试从 Excel 第一行的 <code class="side-code-inline">date</code> 自动识别。
-                </p>
-              </div>
-              <div class="field-group">
-                <label for="fileInput">上传当月自然量 Excel 源数据</label>
-                <input
-                  type="file"
-                  id="fileInput"
-                  accept=".xlsx,.xls,.csv"
-                />
-                <p class="field-help">
-                  推荐：单月一张表，首行字段名为
-                  <code class="side-code-inline">date</code>、
-                  <code class="side-code-inline">country</code>、
-                  <code class="side-code-inline">registration</code> 等。
-                </p>
-              </div>
+          <div class="field">
+            <div class="field-label-row">
+              <label class="field-label" for="sheetSelect">2）选择 Sheet</label>
+              <div class="field-tip">默认使用第一个 Sheet</div>
             </div>
+            <select id="sheetSelect" class="input" disabled>
+              <option value="">请先选择 Excel 文件</option>
+            </select>
+          </div>
 
-            <!-- 按钮 + 状态 -->
-            <div class="button-row">
-              <button type="button" class="primary" id="generateBtn">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M5 12h14M12 5l7 7-7 7"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  ></path>
-                </svg>
-                生成代码
-              </button>
-              <button
-                type="button"
-                class="secondary"
-                id="copyBtn"
-                disabled
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-                  <rect
-                    x="9"
-                    y="9"
-                    width="11"
-                    height="11"
-                    rx="2"
-                    stroke-width="1.5"
-                  ></rect>
-                  <path
-                    d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  ></path>
-                </svg>
-                一键复制
-              </button>
+          <div class="field">
+            <div class="field-label-row">
+              <label class="field-label" for="monthKey">3）设置月份 key（YYYY-MM）</label>
+              <div class="field-tip">不填则自动从首行日期推断</div>
             </div>
+            <input
+              id="monthKey"
+              class="input"
+              type="text"
+              placeholder="例如：2025-10"
+            />
+          </div>
+        </div>
 
-            <div
-              id="status"
-              class="status-bar"
-              data-type="info"
-            >
-              步骤提示会显示在这里：先上传 Excel，再点击「生成代码」。
-            </div>
+        <div class="actions-row">
+          <button id="generateBtn" class="btn btn-primary">
+            <span class="btn-icon">▶</span>
+            <span>生成当月 code</span>
+          </button>
 
-            <!-- 输出区域 -->
-            <div class="field-row">
-              <div class="output-label-row">
-                <label for="output">生成结果（可直接黏贴到看板代码中）</label>
-                <span>格式示例：<code class="side-code-inline">"2025-09": [ &hellip; ],</code></span>
-              </div>
-              <textarea
-                id="output"
-                spellcheck="false"
-                readonly
-                placeholder='// 点击「生成代码」后，这里会自动输出：
-// "2025-09": [
+          <button id="copyBtn" class="btn btn-outline">
+            <span class="btn-icon">⧉</span>
+            <span>一键复制</span>
+          </button>
+        </div>
+
+        <div class="status-row">
+          <div id="status" class="status-text">
+            状态：等待上传 Excel 源数据。
+          </div>
+          <div class="status-right">
+            说明：默认表头中包含 <code>date</code> / <code>country</code>
+            字段，其他字段按原名输出。
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="输出代码">
+        <div class="output-wrapper">
+          <div class="output-header">
+            <span class="code-label">输出预览 · 用于粘贴到看板配置文件</span>
+            <span class="status-right" id="summaryInfo"></span>
+          </div>
+          <textarea
+            id="output"
+            spellcheck="false"
+            placeholder="// 这里会生成类似下面结构：
+// "2025-10": [
 //   {
-//     date: "2025-09-01", // YYYY-MM-DD
-//     country: "GH", // GH / KE / NG / TZ / UG
-//
-//     // 注册 & 付费（D0）
+//     date: "2025-10-01", // YYYY-MM-DD
+//     country: "GH",      // GH / KE / NG / TZ / UG
 //     registration: 302,
 //     D0_unique_purchase: 138,
+//     D0_PURCHASE_VALUE: 561.46,
 //     ...
 //   },
 //   ...
-// ],'
-              ></textarea>
-            </div>
-          </div>
-        </section>
-
-        <!-- 侧边说明 -->
-        <aside class="tool-side">
-          <div class="side-title">Usage Notes · 使用说明</div>
-
-          <div class="side-block">
-            <div class="side-block-title">1. Excel 字段要求（首行字段名）</div>
-            <ul class="side-list">
-              <li>
-                必需：
-                <code class="side-code-inline">date</code>、
-                <code class="side-code-inline">country</code>。
-              </li>
-              <li>
-                指标字段建议命名为（与代码示例一致）：
-                <code class="side-code-inline">registration</code>、
-                <code class="side-code-inline">D0_unique_purchase</code>、
-                <code class="side-code-inline">D0_PURCHASE_VALUE</code>、
-                <code class="side-code-inline">D0_TOTAL_BET_PLACED_USER</code>、
-                <code class="side-code-inline">D0_SPORTS_BET_PLACED_USER</code>、
-                <code class="side-code-inline">D0_GAMES_BET_PLACED_USER</code>、
-                <code class="side-code-inline">D0_SPORTS_BET_FLOW</code>、
-                <code class="side-code-inline">D0_GAMES_BET_FLOW</code>、
-                <code class="side-code-inline">D0_TOTAL_BET_FLOW</code>、
-                <code class="side-code-inline">D7_unique_purchase</code>、
-                <code class="side-code-inline">D7_PURCHASE_VALUE</code>、
-                <code class="side-code-inline">D7_TOTAL_BET_PLACED_USER</code>、
-                <code class="side-code-inline">D7_SPORTS_BET_PLACED_USER</code>、
-                <code class="side-code-inline">D7_GAMES_BET_PLACED_USER</code>、
-                <code class="side-code-inline">D7_SPORTS_BET_FLOW</code>、
-                <code class="side-code-inline">D7_GAMES_BET_FLOW</code>、
-                <code class="side-code-inline">D7_TOTAL_BET_FLOW</code>、
-                <code class="side-code-inline">D1_retained_users</code>、
-                <code class="side-code-inline">D7_retained_users</code>。
-              </li>
-              <li>字段名大小写不完全一致也能识别，但建议与代码终稿统一。</li>
-            </ul>
-          </div>
-
-          <div class="side-block">
-            <div class="side-block-title">2. 操作步骤</div>
-            <ul class="side-list">
-              <li>Step1：导出当月自然量 Excel（单月，包含每日各国家数据）。</li>
-              <li>Step2：确认首行字段名与上方约定一致。</li>
-              <li>Step3：在本页选择月份（或留空自动识别），上传文件。</li>
-              <li>Step4：点击「生成代码」，检查输出结构是否符合预期。</li>
-              <li>Step5：点击「一键复制」，黏贴到自然量看板的源数据代码中。</li>
-            </ul>
-          </div>
-
-          <div class="side-block">
-            <div class="side-block-title">3. 小提示</div>
-            <ul class="side-list">
-              <li>日期支持 Excel 日期格式、数字序列号、以及 <code class="side-code-inline">YYYY-MM-DD</code> 字符串。</li>
-              <li>带千分位的数字（如 <code class="side-code-inline">1,234.56</code>）会自动去逗号后转为数值。</li>
-              <li>若某个指标单元格为空，将按 <code class="side-code-inline">0</code> 输出。</li>
-            </ul>
-          </div>
-        </aside>
+// ],"
+          ></textarea>
+        </div>
       </section>
     </main>
-
-    <footer>
-      <span><strong>版本</strong> · v0.1 自然量月度源数据工具页</span>
-      <span><strong>维护人</strong> · 用户增长部 - Jerry Lyu</span>
-    </footer>
   </div>
-
-  <!-- Excel 解析库：如需本地部署，可将该文件下载到本地并改为相对路径 -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
     (function () {
-      const monthInput = document.getElementById("monthInput");
       const fileInput = document.getElementById("fileInput");
+      const sheetSelect = document.getElementById("sheetSelect");
+      const monthInput = document.getElementById("monthKey");
+      const fileInfo = document.getElementById("fileInfo");
       const generateBtn = document.getElementById("generateBtn");
       const copyBtn = document.getElementById("copyBtn");
       const statusEl = document.getElementById("status");
-      const outputEl = document.getElementById("output");
+      const summaryInfo = document.getElementById("summaryInfo");
+      const outputArea = document.getElementById("output");
 
-      let parsedRows = [];
+      let workbook = null;
 
-      function setStatus(message, type) {
-        statusEl.textContent = message || "";
-        statusEl.dataset.type = type || "info";
+      function setStatus(text) {
+        statusEl.textContent = "状态：" + text;
       }
 
-      function getRaw(row, key) {
-        if (!row || !key) return undefined;
-        if (key in row) return row[key];
+      fileInput.addEventListener("change", function (evt) {
+        const file = evt.target.files && evt.target.files[0];
+        if (!file) {
+          workbook = null;
+          sheetSelect.innerHTML =
+            '<option value="">请先选择 Excel 文件</option>';
+          sheetSelect.disabled = true;
+          fileInfo.textContent = "支持 .xlsx / .xls";
+          setStatus("等待上传 Excel 源数据。");
+          summaryInfo.textContent = "";
+          outputArea.value = "";
+          return;
+        }
 
-        const lower = key.toLowerCase();
-        for (const k in row) {
-          if (Object.prototype.hasOwnProperty.call(row, k)) {
-            if (k.toLowerCase() === lower) return row[k];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const data = e.target.result;
+            workbook = XLSX.read(data, {
+              type: "array",
+              cellDates: true, // 让日期列直接变成 Date 对象
+            });
+
+            const sheetNames = workbook.SheetNames || [];
+            sheetSelect.innerHTML = "";
+            sheetNames.forEach((name, idx) => {
+              const opt = document.createElement("option");
+              opt.value = name;
+              opt.textContent = idx === 0 ? name + "（默认）" : name;
+              sheetSelect.appendChild(opt);
+            });
+            sheetSelect.disabled = sheetNames.length === 0;
+
+            fileInfo.textContent =
+              file.name + " · " + sheetNames.length + " 个 sheet";
+            setStatus("已载入文件，选好 Sheet 后可生成代码。");
+            summaryInfo.textContent = "";
+            outputArea.value = "";
+          } catch (err) {
+            console.error(err);
+            workbook = null;
+            sheetSelect.innerHTML =
+              '<option value="">解析失败，请检查文件格式</option>';
+            sheetSelect.disabled = true;
+            setStatus("读取 Excel 失败：" + (err && err.message));
+            summaryInfo.textContent = "";
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
+      generateBtn.addEventListener("click", function () {
+        if (!workbook) {
+          setStatus("请先上传 Excel 文件。");
+          return;
+        }
+
+        const sheetName =
+          sheetSelect.value || (workbook.SheetNames || [])[0];
+        if (!sheetName) {
+          setStatus("当前工作簿中找不到可用 Sheet。");
+          return;
+        }
+
+        const worksheet = workbook.Sheets[sheetName];
+        if (!worksheet) {
+          setStatus("选中的 Sheet 不存在。");
+          return;
+        }
+
+        let rows;
+        try {
+          rows = XLSX.utils.sheet_to_json(worksheet, {
+            defval: null,
+            raw: true, // 保留原始类型：数字 / Date / 字符串
+          });
+        } catch (err) {
+          console.error(err);
+          setStatus("解析 Sheet 数据失败：" + (err && err.message));
+          return;
+        }
+
+        if (!rows || rows.length === 0) {
+          setStatus("当前 Sheet 没有数据行。");
+          outputArea.value = "";
+          summaryInfo.textContent = "";
+          return;
+        }
+
+        const firstRow = rows[0];
+        const fieldNames = Object.keys(firstRow || {});
+        if (fieldNames.length === 0) {
+          setStatus("首行没有可识别字段，请确认第一行是表头。");
+          outputArea.value = "";
+          summaryInfo.textContent = "";
+          return;
+        }
+
+        const dateField = findDateField(fieldNames);
+        if (!dateField) {
+          setStatus(
+            "找不到日期字段：请确认表头中包含 date / 日期 等字样。"
+          );
+          return;
+        }
+
+        const countryField = findCountryField(fieldNames);
+
+        const firstDateValue = firstRow[dateField];
+        const firstDateStr = normalizeDate(firstDateValue);
+
+        if (!firstDateStr) {
+          setStatus(
+            "首行日期无法解析，原始值：" + String(firstDateValue || "")
+          );
+        }
+
+        let monthKey = monthInput.value.trim();
+        if (!monthKey && firstDateStr && firstDateStr.length >= 7) {
+          monthKey = firstDateStr.slice(0, 7);
+          monthInput.value = monthKey;
+        }
+
+        if (!monthKey) {
+          setStatus("请填写月份 key，格式类似 2025-10。");
+          return;
+        }
+
+        const objects = [];
+        let minDate = null;
+        let maxDate = null;
+
+        rows.forEach((row) => {
+          const rawDate = row[dateField];
+          const dateStr = normalizeDate(rawDate);
+          if (!dateStr) return;
+
+          const objFields = [];
+
+          // date 字段
+          objFields.push(
+            '    date: "' + dateStr + '", // YYYY-MM-DD'
+          );
+
+          // country 字段
+          if (countryField) {
+            const rawCountry = row[countryField];
+            const countryStr =
+              rawCountry == null ? "" : String(rawCountry).trim();
+            objFields.push(
+              '    country: "' +
+                countryStr +
+                '", // GH / KE / NG / TZ / UG'
+            );
+          }
+
+          // 其他字段：按表头原名输出
+          fieldNames.forEach((key) => {
+            if (key === dateField || key === countryField) return;
+            const rawVal = row[key];
+            if (
+              rawVal === null ||
+              typeof rawVal === "undefined" ||
+              rawVal === ""
+            ) {
+              return;
+            }
+            const formattedVal = formatValue(rawVal);
+            objFields.push("    " + key + ": " + formattedVal + ",");
+          });
+
+          const objStr = "  {\n" + objFields.join("\n") + "\n  }";
+          objects.push(objStr);
+
+          // 记录日期范围
+          if (dateStr && dateStr.length >= 10) {
+            if (!minDate || dateStr < minDate) minDate = dateStr;
+            if (!maxDate || dateStr > maxDate) maxDate = dateStr;
+          }
+        });
+
+        if (objects.length === 0) {
+          setStatus("没有生成任何记录，请检查日期列是否为空。");
+          outputArea.value = "";
+          summaryInfo.textContent = "";
+          return;
+        }
+
+        const lines = [];
+        lines.push('"' + monthKey + '": [');
+        lines.push(objects.join(",\n"));
+        lines.push("],");
+
+        const result = lines.join("\n");
+        outputArea.value = result;
+
+        const rangeText =
+          minDate && maxDate
+            ? "日期范围 " + minDate + " ~ " + maxDate
+            : "日期范围未识别";
+        setStatus(
+          "生成完成：共 " + objects.length + " 条记录，" + rangeText + "。"
+        );
+        summaryInfo.textContent =
+          "记录数：" +
+          objects.length +
+          " · " +
+          rangeText +
+          " · 月份 key = " +
+          monthKey;
+      });
+
+      copyBtn.addEventListener("click", function () {
+        const text = outputArea.value;
+        if (!text) {
+          setStatus("当前没有可复制的代码。");
+          return;
+        }
+
+        function fallbackCopy() {
+          outputArea.focus();
+          outputArea.select();
+          try {
+            const ok = document.execCommand("copy");
+            if (ok) {
+              setStatus("已复制到剪贴板，可以直接贴到看板 code。");
+            } else {
+              setStatus("浏览器不支持自动复制，可以手动 Ctrl+C。");
+            }
+          } catch (err) {
+            console.error(err);
+            setStatus("复制失败，可以手动 Ctrl+C。");
           }
         }
-        return undefined;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(text)
+            .then(function () {
+              setStatus("已复制到剪贴板，可以直接贴到看板 code。");
+            })
+            .catch(function (err) {
+              console.error(err);
+              fallbackCopy();
+            });
+        } else {
+          fallbackCopy();
+        }
+      });
+
+      function findDateField(fields) {
+        const lower = fields.map((f) => f.toLowerCase());
+        let idx = lower.findIndex((f) => f === "date");
+        if (idx >= 0) return fields[idx];
+
+        idx = lower.findIndex((f) => f.includes("date"));
+        if (idx >= 0) return fields[idx];
+
+        idx = fields.findIndex((f) => f.indexOf("日期") !== -1);
+        if (idx >= 0) return fields[idx];
+
+        return null;
       }
 
-      function getNumber(row, key) {
-        const raw = getRaw(row, key);
-        if (raw === undefined || raw === null || raw === "") return 0;
-        const cleaned =
-          typeof raw === "string" ? raw.replace(/,/g, "").trim() : raw;
-        const num = Number(cleaned);
-        return Number.isFinite(num) ? num : 0;
-      }
+      function findCountryField(fields) {
+        const lower = fields.map((f) => f.toLowerCase());
+        let idx = lower.findIndex((f) => f === "country");
+        if (idx >= 0) return fields[idx];
 
-      function getString(row, key) {
-        const raw = getRaw(row, key);
-        if (raw === undefined || raw === null) return "";
-        return String(raw).trim();
-      }
+        idx = lower.findIndex((f) => f.includes("country"));
+        if (idx >= 0) return fields[idx];
 
-      function pad2(num) {
-        return String(num).padStart(2, "0");
+        idx = fields.findIndex((f) => f.indexOf("国家") !== -1);
+        if (idx >= 0) return fields[idx];
+
+        return null;
       }
 
       function normalizeDate(value) {
-        if (!value) return "";
-
-        // JS Date
-        if (Object.prototype.toString.call(value) === "[object Date]") {
-          const y = value.getFullYear();
-          const m = pad2(value.getMonth() + 1);
-          const d = pad2(value.getDate());
-          return y + "-" + m + "-" + d;
+        if (value === null || typeof value === "undefined" || value === "") {
+          return "";
         }
 
-        // Excel 序列号
-        if (typeof value === "number" && Number.isFinite(value)) {
+        // 1）SheetJS Date 对象：用 UTC 口径转 "YYYY-MM-DD"
+        if (
+          Object.prototype.toString.call(value) === "[object Date]" &&
+          typeof value.toISOString === "function"
+        ) {
+          try {
+            return value.toISOString().slice(0, 10);
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        // 2）Excel 序列号
+        if (typeof value === "number" && isFinite(value)) {
           try {
             if (
               typeof XLSX !== "undefined" &&
@@ -798,292 +784,53 @@
             ) {
               const o = XLSX.SSF.parse_date_code(value);
               if (o && o.y && o.m && o.d) {
-                const y = o.y;
-                const m = pad2(o.m);
-                const d = pad2(o.d);
+                const y = String(o.y).padStart(4, "0");
+                const m = String(o.m).padStart(2, "0");
+                const d = String(o.d).padStart(2, "0");
                 return y + "-" + m + "-" + d;
               }
             }
           } catch (e) {
-            // ignore, fall through
+            // ignore
           }
         }
 
+        // 3）字符串日期：支持 2025-10-01 / 2025/10/1 / 2025.10.1 等
         const s = String(value).trim();
-
-        // 形如 2025-09-01 / 2025/9/1 / 2025.9.1
         const m = s.match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
         if (m) {
           const year = m[1];
-          const month = pad2(m[2]);
-          const day = pad2(m[3]);
+          const month = m[2].padStart(2, "0");
+          const day = m[3].padStart(2, "0");
           return year + "-" + month + "-" + day;
         }
 
-        // 形如 2025-09
-        if (/^\d{4}-\d{2}$/.test(s)) {
-          return s + "-01";
-        }
-
+        // 其他情况：原样返回
         return s;
       }
 
-      function inferMonthKey(rows) {
-        if (!rows || rows.length === 0) return "";
-        const first = rows[0];
-        const dateVal =
-          getRaw(first, "date") ||
-          getRaw(first, "日期") ||
-          getRaw(first, "Date") ||
-          getRaw(first, "DATE");
-        const dateStr = normalizeDate(dateVal);
-        if (!dateStr || dateStr.length < 7) return "";
-        return dateStr.slice(0, 7);
+      function formatValue(val) {
+        if (typeof val === "number") {
+          if (!isFinite(val)) return 0;
+          return val;
+        }
+
+        if (typeof val === "boolean") {
+          return val ? "true" : "false";
+        }
+
+        const s = String(val).trim();
+        if (!s) return '""';
+
+        // 先尝试去掉千分位后转换数字
+        const numCandidate = Number(s.replace(/,/g, ""));
+        if (!Number.isNaN(numCandidate)) {
+          return numCandidate;
+        }
+
+        // 无法安全转成数字时，按字符串处理
+        return JSON.stringify(s);
       }
-
-      function formatRowToObject(row) {
-        const indent1 = "  ";
-        const indent2 = "    ";
-
-        const dateVal =
-          getRaw(row, "date") ||
-          getRaw(row, "日期") ||
-          getRaw(row, "Date") ||
-          getRaw(row, "DATE");
-        const dateStr = normalizeDate(dateVal);
-
-        const country =
-          (getString(row, "country") ||
-            getString(row, "国家") ||
-            "").toUpperCase();
-
-        const sections = [
-          {
-            comment: "// 注册 & 付费（D0）",
-            fields: ["registration", "D0_unique_purchase", "D0_PURCHASE_VALUE"],
-          },
-          {
-            comment: "// 投注人数（D0）",
-            fields: [
-              "D0_TOTAL_BET_PLACED_USER",
-              "D0_SPORTS_BET_PLACED_USER",
-              "D0_GAMES_BET_PLACED_USER",
-            ],
-          },
-          {
-            comment: "// 流水（D0）",
-            fields: [
-              "D0_SPORTS_BET_FLOW",
-              "D0_GAMES_BET_FLOW",
-              "D0_TOTAL_BET_FLOW",
-            ],
-          },
-          {
-            comment: "// 付费 & 投注（D7）",
-            fields: [
-              "D7_unique_purchase",
-              "D7_PURCHASE_VALUE",
-              "D7_TOTAL_BET_PLACED_USER",
-              "D7_SPORTS_BET_PLACED_USER",
-              "D7_GAMES_BET_PLACED_USER",
-            ],
-          },
-          {
-            comment: "// 流水（D7）",
-            fields: [
-              "D7_SPORTS_BET_FLOW",
-              "D7_GAMES_BET_FLOW",
-              "D7_TOTAL_BET_FLOW",
-            ],
-          },
-          {
-            comment: "// 留存",
-            fields: ["D1_retained_users", "D7_retained_users"],
-          },
-        ];
-
-        const lines = [];
-        lines.push(indent1 + "{");
-        lines.push(
-          indent2 +
-            'date: "' +
-            dateStr +
-            '", // YYYY-MM-DD'
-        );
-        lines.push(
-          indent2 +
-            'country: "' +
-            country +
-            '", // GH / KE / NG / TZ / UG'
-        );
-        lines.push(""); // 空行
-
-        sections.forEach(function (section) {
-          lines.push(indent2 + section.comment);
-          section.fields.forEach(function (field) {
-            lines.push(
-              indent2 + field + ": " + getNumber(row, field) + ","
-            );
-          });
-          lines.push(""); // 每个块之间空一行
-        });
-
-        // 去掉最后多出来的空行
-        if (lines[lines.length - 1] === "") {
-          lines.pop();
-        }
-
-        lines.push(indent1 + "},");
-        return lines.join("\n");
-      }
-
-      function handleFileChange(event) {
-        const file = event.target.files && event.target.files[0];
-        if (!file) {
-          parsedRows = [];
-          outputEl.value = "";
-          copyBtn.disabled = true;
-          setStatus("未选择文件。请先选择当月自然量 Excel。", "info");
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {
-              type: "array",
-              cellDates: true,
-            });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const json = XLSX.utils.sheet_to_json(worksheet, { defval: null });
-
-            parsedRows = (json || []).filter(function (row) {
-              return row && Object.keys(row).length > 0;
-            });
-
-            if (!parsedRows.length) {
-              setStatus("解析成功，但没有有效数据行，请检查表格内容。", "error");
-              outputEl.value = "";
-              copyBtn.disabled = true;
-              return;
-            }
-
-            // 自动识别月份
-            const inferred = inferMonthKey(parsedRows);
-            if (inferred && !monthInput.value) {
-              monthInput.value = inferred;
-            }
-
-            setStatus(
-              "已加载 " +
-                file.name +
-                "，共 " +
-                parsedRows.length +
-                " 行有效数据。",
-              "success"
-            );
-            outputEl.value = "";
-            copyBtn.disabled = true;
-          } catch (err) {
-            console.error(err);
-            parsedRows = [];
-            outputEl.value = "";
-            copyBtn.disabled = true;
-            setStatus(
-              "解析 Excel 失败，请确认文件为 .xlsx / .xls / .csv 且首行为字段名。",
-              "error"
-            );
-          }
-        };
-
-        reader.onerror = function () {
-          parsedRows = [];
-          outputEl.value = "";
-          copyBtn.disabled = true;
-          setStatus("文件读取失败，请重试或更换文件。", "error");
-        };
-
-        reader.readAsArrayBuffer(file);
-      }
-
-      function handleGenerateClick() {
-        if (!parsedRows || !parsedRows.length) {
-          setStatus("请先上传当月自然量 Excel 文件。", "error");
-          return;
-        }
-
-        let monthKey = (monthInput.value || "").trim();
-        if (!monthKey) {
-          monthKey = inferMonthKey(parsedRows);
-          if (!monthKey) {
-            setStatus(
-              "无法从数据中识别月份，请在顶部「月份」输入框手动填写 YYYY-MM。",
-              "error"
-            );
-            return;
-          }
-          monthInput.value = monthKey;
-        }
-
-        const objects = parsedRows.map(function (row) {
-          return formatRowToObject(row);
-        });
-
-        const code =
-          '"' +
-          monthKey +
-          '": [\n' +
-          objects.join("\n\n") +
-          "\n],";
-
-        outputEl.value = code;
-        copyBtn.disabled = !code;
-        setStatus("代码已生成，可点击「一键复制」复制到剪贴板。", "success");
-      }
-
-      function fallbackCopy(textarea) {
-        textarea.focus();
-        textarea.select();
-        let ok = false;
-        try {
-          ok = document.execCommand("copy");
-        } catch (err) {
-          ok = false;
-        }
-        if (ok) {
-          setStatus("已通过兼容模式复制到剪贴板。", "success");
-        } else {
-          setStatus("复制失败，请手动选中上方代码复制。", "error");
-        }
-        window.getSelection().removeAllRanges();
-      }
-
-      function handleCopyClick() {
-        const text = outputEl.value || "";
-        if (!text) {
-          setStatus("当前没有可复制的内容，请先生成代码。", "error");
-          return;
-        }
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard
-            .writeText(text)
-            .then(function () {
-              setStatus("已复制到剪贴板，可以黏贴到看板代码中。", "success");
-            })
-            .catch(function () {
-              fallbackCopy(outputEl);
-            });
-        } else {
-          fallbackCopy(outputEl);
-        }
-      }
-
-      fileInput.addEventListener("change", handleFileChange);
-      generateBtn.addEventListener("click", handleGenerateClick);
-      copyBtn.addEventListener("click", handleCopyClick);
     })();
   </script>
 </body>
