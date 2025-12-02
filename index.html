@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>BangBet Growth Analytics · 源数据工具目录</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="BangBet Africa Growth Analytics · Source Data Tools"
+  />
+  <!-- 可按需替换为你常用的字体 -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+  />
+
+  <style>
+    :root {
+      --bg-color: #f3f5fb;
+      --bg-gradient: radial-gradient(
+        circle at top left,
+        #e8f0ff 0,
+        #f7f9ff 40%,
+        #f3f5fb 100%
+      );
+      --card-bg: rgba(255, 255, 255, 0.92);
+      --border-subtle: rgba(15, 23, 42, 0.06);
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --accent-strong: rgba(37, 99, 235, 0.16);
+      --accent-text-soft: #64748b;
+      --text-main: #0f172a;
+      --text-muted: #6b7280;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
+      --transition-fast: 0.18s ease-out;
+      --grid-max-width: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1280px;
+      padding: 20px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    @media (min-width: 960px) {
+      .page {
+        padding: 28px 24px 48px;
+      }
+    }
+
+    /* 顶部栏 */
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 11px;
+      background: conic-gradient(
+        from 200deg,
+        #2563eb,
+        #22c55e,
+        #a855f7,
+        #2563eb
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9),
+        0 10px 25px rgba(37, 99, 235, 0.35);
+    }
+
+    .brand-logo span {
+      font-size: 17px;
+      font-weight: 700;
+      color: #f9fafb;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title-main {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .brand-title-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .env-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      padding: 4px 11px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 11px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .pill span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+    }
+
+    /* 主体 */
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.3fr);
+      gap: 18px;
+      align-items: center;
+    }
+
+    @media (max-width: 800px) {
+      .hero {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .hero-left {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent-text-soft);
+    }
+
+    .hero-kicker::before {
+      content: "";
+      width: 26px;
+      height: 1px;
+      border-radius: 999px;
+      background: linear-gradient(
+        to right,
+        rgba(148, 163, 184, 0.2),
+        rgba(148, 163, 184, 0.7)
+      );
+    }
+
+    .hero-title {
+      font-size: 26px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+
+    .hero-title span.highlight {
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .meta-tag {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .hero-right {
+      justify-self: end;
+    }
+
+    .summary-card {
+      min-width: 260px;
+      max-width: 340px;
+      padding: 14px 16px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.98),
+        rgba(239, 246, 255, 0.95)
+      );
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent-text-soft);
+    }
+
+    .summary-period {
+      font-size: 11px;
+      color: var(--accent-text-soft);
+      background: rgba(15, 23, 42, 0.03);
+      border-radius: var(--radius-pill);
+      padding: 4px 9px;
+    }
+
+    .summary-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .summary-metric {
+      padding: 7px 8px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .metric-value {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .metric-trend {
+      font-size: 11px;
+      color: #16a34a;
+    }
+
+    .metric-trend.negative {
+      color: #e11d48;
+    }
+
+    /* 卡片网格 */
+
+    .grid {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      max-width: var(--grid-max-width);
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card-link {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .dashboard-card {
+      position: relative;
+      height: 100%;
+      padding: 16px 16px 14px;
+      border-radius: var(--radius-lg);
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform var(--transition-fast),
+        box-shadow var(--transition-fast), border-color var(--transition-fast),
+        background-color var(--transition-fast);
+    }
+
+    .dashboard-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at top left,
+        rgba(37, 99, 235, 0.12),
+        transparent 55%
+      );
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      pointer-events: none;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-4px) translateZ(0);
+      box-shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
+      border-color: rgba(37, 99, 235, 0.32);
+      background-color: rgba(255, 255, 255, 0.98);
+    }
+
+    .dashboard-card:hover::before {
+      opacity: 1;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .card-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-text-soft);
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-icon {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 15px;
+      background: var(--accent-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(37, 99, 235, 0.3);
+    }
+
+    .card-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--accent);
+    }
+
+    .card-body {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .card-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.03);
+      color: var(--accent-text-soft);
+    }
+
+    .card-footer {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--accent-text-soft);
+    }
+
+    .card-period {
+      padding: 4px 9px;
+      border-radius: var(--radius-pill);
+      background: rgba(15, 23, 42, 0.03);
+    }
+
+    .card-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .card-cta svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--accent);
+    }
+
+    footer {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: var(--grid-max-width);
+    }
+
+    footer span strong {
+      font-weight: 600;
+      color: var(--accent-text-soft);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-logo">
+          <span>BB</span>
+        </div>
+        <div class="brand-title">
+          <div class="brand-title-main">BangBet Growth Analytics</div>
+          <div class="brand-title-sub">Africa · GH · KE · NG · TZ</div>
+        </div>
+      </div>
+      <div class="env-badges">
+        <div class="pill">
+          <span class="dot"></span>
+          TOOLS READY
+        </div>
+        <div class="pill">
+          Source Data · Utilities
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-left">
+          <div class="hero-kicker">Tools Index</div>
+          <h1 class="hero-title">
+            自然量与买量<span class="highlight">源数据工具</span> · 目录
+          </h1>
+          <p class="hero-desc">
+            为每月更新 4 个增长看板提供标准化「源数据处理」入口：
+            你可以在对应工具中粘贴原始导出表格，一键生成可直接粘贴到代码或数据源中的片段，
+            保证看板结构与字段口径稳定。
+          </p>
+          <div class="hero-meta">
+            <span class="meta-tag">用途：自然 / 买量源数据预处理</span>
+            <span class="meta-tag">频率：月度更新 · 支持历史回填</span>
+            <span class="meta-tag">适用：GH · KE · NG · TZ · App / H5</span>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <aside class="summary-card">
+            <div class="summary-header">
+              <div class="summary-title">工具配置概览</div>
+              <div class="summary-period">节奏：按月维护</div>
+            </div>
+            <div class="summary-metrics">
+              <div class="summary-metric">
+                <div class="metric-label">工具数量</div>
+                <div class="metric-value">4 个工具</div>
+                <div class="metric-trend">分别对应 4 个看板</div>
+              </div>
+              <div class="summary-metric">
+                <div class="metric-label">覆盖来源</div>
+                <div class="metric-value">自然 + 买量</div>
+                <div class="metric-trend">含 Mix / 国家视角</div>
+              </div>
+              <div class="summary-metric">
+                <div class="metric-label">输出形态</div>
+                <div class="metric-value">代码 / 表格片段</div>
+                <div class="metric-trend">适配你现有脚本</div>
+              </div>
+              <div class="summary-metric">
+                <div class="metric-label">后续扩展</div>
+                <div class="metric-value">模版化参数</div>
+                <div class="metric-trend">支持更多国家 / 维度</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="grid" aria-label="Data tools directory">
+        <!-- 自然量月度源数据处理工具 -->
+        <a class="card-link" href="tool-organic-monthly.html">
+          <article class="dashboard-card">
+            <div class="card-header">
+              <div class="card-title-block">
+                <div class="card-eyebrow">ORGANIC · TOOL</div>
+                <div class="card-title">自然量月度源数据处理工具</div>
+                <div class="card-subtitle">
+                  将自然量注册 / 活跃 / 付费等原始导出整理成「自然量月度数据对比」看板需要的字段结构。
+                </div>
+              </div>
+              <div class="card-icon" aria-hidden="true">
+                <!-- 简单 code 图标 -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <polyline
+                    points="8 5 3 12 8 19"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></polyline>
+                  <polyline
+                    points="16 5 21 12 16 19"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="card-body">
+              输入：按国家 × 产品导出的自然注册 / 充值 / 留存原始表格。
+              输出：按看板字段顺序排好、可直接粘贴到代码或数据源的片段（例如标准化列名、日期与国家编码）。
+              <div class="card-tags">
+                <span class="card-tag">适配看板：自然量月度数据对比</span>
+                <span class="card-tag">步骤：清洗 / 汇总 / 转码</span>
+                <span class="card-tag">维度：国家 / 产品 / 月份</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-period">更新频率：每月 1 次 · 支持多月回填</span>
+              <span class="card-cta">
+                进入工具
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M8 5l7 7-7 7"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+              </span>
+            </div>
+          </article>
+        </a>
+
+        <!-- 买量月度源数据处理工具 -->
+        <a class="card-link" href="tool-paid-monthly.html">
+          <article class="dashboard-card">
+            <div class="card-header">
+              <div class="card-title-block">
+                <div class="card-eyebrow">PAID ACQ · TOOL</div>
+                <div class="card-title">买量月度源数据处理工具</div>
+                <div class="card-subtitle">
+                  面向「买量月度数据对比」看板，将 Facebook / Google 等渠道原始报表统一到 CPR / CPP / ROI 等指标口径。
+                </div>
+              </div>
+              <div class="card-icon" aria-hidden="true">
+                <!-- 表格 / 数据图标 -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="1.7"></rect>
+                  <path d="M3 10h18" stroke-width="1.6" stroke-linecap="round"></path>
+                  <path d="M9 5v14" stroke-width="1.6" stroke-linecap="round"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="card-body">
+              输入：各媒体导出的投放日报 / 月报（Spend、Install、Purchase 等）。
+              输出：按国家 × 媒体 × 产品聚合后的 CPR、CPP、D0/D7 Purchase ROI 等字段，结构与看板完全对齐。
+              <div class="card-tags">
+                <span class="card-tag">适配看板：买量月度数据对比</span>
+                <span class="card-tag">指标：CPR / CPP / ROI</span>
+                <span class="card-tag">维度：国家 / 媒体 / 产品</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-period">更新频率：每月 1 次 · 渠道级聚合</span>
+              <span class="card-cta">
+                进入工具
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M8 5l7 7-7 7"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+              </span>
+            </div>
+          </article>
+        </a>
+
+        <!-- 自然量 vs 买量 源数据对比工具 -->
+        <a class="card-link" href="tool-organic-vs-paid.html">
+          <article class="dashboard-card">
+            <div class="card-header">
+              <div class="card-title-block">
+                <div class="card-eyebrow">MIX QUALITY · TOOL</div>
+                <div class="card-title">自然量 vs 买量源数据对比工具</div>
+                <div class="card-subtitle">
+                  针对「自然量 vs 买量数据对比」看板，把自然和买量两套来源数据对齐到同一维度，方便做质量差异分析。
+                </div>
+              </div>
+              <div class="card-icon" aria-hidden="true">
+                <!-- 对比图标 -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <polyline
+                    points="4 18 8 13 12 15 18 8"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></polyline>
+                  <polyline
+                    points="4 8 8 10 12 9 18 5"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    opacity="0.7"
+                  ></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="card-body">
+              输入：同一国家、同一周期下的自然与买量源数据（注册、付费、留存、体育/游戏结构）。
+              输出：按来源标签拆分后的标准表，直接喂给看板做「来源对比」和质量差异可视化。
+              <div class="card-tags">
+                <span class="card-tag">适配看板：自然 vs 买量数据对比</span>
+                <span class="card-tag">维度：来源 / 国家 / 产品</span>
+                <span class="card-tag">指标：付费深度 / 留存</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-period">更新频率：每月 1 次 · 单月来源对比</span>
+              <span class="card-cta">
+                进入工具
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M8 5l7 7-7 7"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+              </span>
+            </div>
+          </article>
+        </a>
+
+        <!-- 国家买量可视化报告 源数据工具 -->
+        <a class="card-link" href="tool-country-acquisition.html">
+          <article class="dashboard-card">
+            <div class="card-header">
+              <div class="card-title-block">
+                <div class="card-eyebrow">COUNTRY DEEP DIVE · TOOL</div>
+                <div class="card-title">国家买量可视化报告源数据工具</div>
+                <div class="card-subtitle">
+                  面向「国家买量数据可视化报告」，将单国多渠道的日度报表清洗成可画 ROI 热力图与留存曲线的标准结构。
+                </div>
+              </div>
+              <div class="card-icon" aria-hidden="true">
+                <!-- 热力 / 网格图标 -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="7" height="7" rx="1.5" stroke-width="1.5"></rect>
+                  <rect x="14" y="4" width="7" height="5" rx="1.5" stroke-width="1.5"></rect>
+                  <rect x="3" y="15" width="5" height="6" rx="1.5" stroke-width="1.5"></rect>
+                  <rect x="11" y="13" width="10" height="8" rx="1.8" stroke-width="1.5"></rect>
+                </svg>
+              </div>
+            </div>
+            <div class="card-body">
+              输入：单国家（如 TZ）的投放日报 + 渠道拆分（含 App / H5）。
+              输出：按日期 × 媒体 × 产品展开的完整链路指标表，用于生成 ROI 热力图、留存曲线和 A/B 测试追踪图表。
+              <div class="card-tags">
+                <span class="card-tag">适配看板：国家买量数据可视化报告</span>
+                <span class="card-tag">维度：日期 / 媒体 / 产品</span>
+                <span class="card-tag">用途：国家级复盘 / 实验跟踪</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-period">更新频率：按需 · 单国深度复盘</span>
+              <span class="card-cta">
+                进入工具
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M8 5l7 7-7 7"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+              </span>
+            </div>
+          </article>
+        </a>
+      </section>
+    </main>
+
+    <footer>
+      <span><strong>版本</strong> · v0.1 工具目录页（与增长分析目录配套）</span>
+      <span><strong>维护人</strong> · 用户增长部 - Jerry Lyu</span>
+    </footer>
+  </div>
+</body>
+</html>
