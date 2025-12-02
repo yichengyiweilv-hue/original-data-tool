@@ -20,7 +20,7 @@
       --border-subtle: rgba(15, 23, 42, 0.08);
       --accent: #2563eb;
       --accent-soft: rgba(37, 99, 235, 0.08);
-      --accent-text-soft: #64748b;
+      --accent-strong: rgba(37, 99, 235, 0.16);
       --text-main: #0f172a;
       --text-muted: #6b7280;
       --success: #16a34a;
@@ -263,18 +263,24 @@
       gap: 10px;
     }
 
+    .field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
     .field-row-inline {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      align-items: flex-start;
+      align-items: center;
     }
 
-    .field-group {
+    .field-row-inline .field-group {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      flex: 1 1 200px;
+      flex: 1 1 180px;
       min-width: 0;
     }
 
@@ -447,15 +453,6 @@
       color: var(--text-muted);
     }
 
-    code.inline {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-        "Liberation Mono", "Courier New", monospace;
-      font-size: 11px;
-      background: #f3f4f6;
-      border-radius: 6px;
-      padding: 1px 4px;
-    }
-
     /* 侧边说明 */
 
     .side-title {
@@ -487,6 +484,15 @@
 
     .side-list li + li {
       margin-top: 2px;
+    }
+
+    .side-code-inline {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      padding: 1px 4px;
     }
 
     footer {
@@ -539,8 +545,8 @@
           </h1>
           <p class="hero-desc">
             上传当月自然量 Excel（首行为字段名），自动生成看板所需的
-            <code class="inline">"YYYY-MM": [ { ... } ]</code>
-            结构代码。字段顺序与注释和你的「月自然量数据源代码示例」保持一致。
+            <code class="side-code-inline">"YYYY-MM": [ { ... } ]</code>
+            结构代码。字段顺序与注释与现有「月自然量数据源代码示例」保持一致。
           </p>
           <div class="hero-meta">
             <span class="meta-tag">来源：自然量（GH / KE / NG / TZ / UG）</span>
@@ -556,11 +562,10 @@
                 <input
                   type="month"
                   id="monthInput"
-                  placeholder="例如：2025-10"
+                  placeholder="例如：2025-09"
                 />
                 <p class="field-help">
-                  若留空，将尝试从 Excel 第一行的
-                  <code class="inline">date</code> 自动识别。
+                  若留空，将尝试从 Excel 第一行的 <code class="side-code-inline">date</code> 自动识别。
                 </p>
               </div>
               <div class="field-group">
@@ -568,13 +573,13 @@
                 <input
                   type="file"
                   id="fileInput"
-                  accept=".xlsx,.xls"
+                  accept=".xlsx,.xls,.csv"
                 />
                 <p class="field-help">
                   推荐：单月一张表，首行字段名为
-                  <code class="inline">date</code>、
-                  <code class="inline">country</code>、
-                  <code class="inline">registration</code> 等。
+                  <code class="side-code-inline">date</code>、
+                  <code class="side-code-inline">country</code>、
+                  <code class="side-code-inline">registration</code> 等。
                 </p>
               </div>
             </div>
@@ -623,55 +628,29 @@
               class="status-bar"
               data-type="info"
             >
-              状态：等待上传 Excel 源数据。
+              步骤提示会显示在这里：先上传 Excel，再点击「生成代码」。
             </div>
 
             <!-- 输出区域 -->
-            <div class="field-group">
+            <div class="field-row">
               <div class="output-label-row">
                 <label for="output">生成结果（可直接黏贴到看板代码中）</label>
-                <span>格式示例：<code class="inline">"2025-09": [ &hellip; ],</code></span>
+                <span>格式示例：<code class="side-code-inline">"2025-10": [ &hellip; ],</code></span>
               </div>
               <textarea
                 id="output"
                 spellcheck="false"
                 readonly
                 placeholder='// 点击「生成代码」后，这里会自动输出：
-// "2025-09": [
+// "2025-10": [
 //   {
-//     date: "2025-09-01", // YYYY-MM-DD
-//     country: "GH",      // GH / KE / NG / TZ / UG
+//     date: "2025-10-01", // YYYY-MM-DD
+//     country: "GH", // GH / KE / NG / TZ / UG
 //
 //     // 注册 & 付费（D0）
 //     registration: 302,
 //     D0_unique_purchase: 138,
-//     D0_PURCHASE_VALUE: 561.46,
-//
-//     // 投注人数（D0）
-//     D0_TOTAL_BET_PLACED_USER: 139,
-//     D0_SPORTS_BET_PLACED_USER: 64,
-//     D0_GAMES_BET_PLACED_USER: 104,
-//
-//     // 流水（D0）
-//     D0_SPORTS_BET_FLOW: 93.48,
-//     D0_GAMES_BET_FLOW: 2211.0,
-//     D0_TOTAL_BET_FLOW: 2304.49,
-//
-//     // 付费 & 投注（D7）
-//     D7_unique_purchase: 172,
-//     D7_PURCHASE_VALUE: 3002.0,
-//     D7_TOTAL_BET_PLACED_USER: 177,
-//     D7_SPORTS_BET_PLACED_USER: 108,
-//     D7_GAMES_BET_PLACED_USER: 138,
-//
-//     // 流水（D7）
-//     D7_SPORTS_BET_FLOW: 532.02,
-//     D7_GAMES_BET_FLOW: 16393.33,
-//     D7_TOTAL_BET_FLOW: 16925.36,
-//
-//     // 留存
-//     D1_retained_users: 139,
-//     D7_retained_users: 61,
+//     ...
 //   },
 //   ...
 // ],'
@@ -689,30 +668,30 @@
             <ul class="side-list">
               <li>
                 必需：
-                <code class="inline">date</code>（日期），
-                <code class="inline">country</code>（国家）。
+                <code class="side-code-inline">date</code>、
+                <code class="side-code-inline">country</code>。
               </li>
               <li>
-                建议与示例保持一致的字段名：
-                <code class="inline">registration</code>、
-                <code class="inline">D0_unique_purchase</code>、
-                <code class="inline">D0_PURCHASE_VALUE</code>、
-                <code class="inline">D0_TOTAL_BET_PLACED_USER</code>、
-                <code class="inline">D0_SPORTS_BET_PLACED_USER</code>、
-                <code class="inline">D0_GAMES_BET_PLACED_USER</code>、
-                <code class="inline">D0_SPORTS_BET_FLOW</code>、
-                <code class="inline">D0_GAMES_BET_FLOW</code>、
-                <code class="inline">D0_TOTAL_BET_FLOW</code>、
-                <code class="inline">D7_unique_purchase</code>、
-                <code class="inline">D7_PURCHASE_VALUE</code>、
-                <code class="inline">D7_TOTAL_BET_PLACED_USER</code>、
-                <code class="inline">D7_SPORTS_BET_PLACED_USER</code>、
-                <code class="inline">D7_GAMES_BET_PLACED_USER</code>、
-                <code class="inline">D7_SPORTS_BET_FLOW</code>、
-                <code class="inline">D7_GAMES_BET_FLOW</code>、
-                <code class="inline">D7_TOTAL_BET_FLOW</code>、
-                <code class="inline">D1_retained_users</code>、
-                <code class="inline">D7_retained_users</code>。
+                指标字段建议命名为（与代码示例一致）：
+                <code class="side-code-inline">registration</code>、
+                <code class="side-code-inline">D0_unique_purchase</code>、
+                <code class="side-code-inline">D0_PURCHASE_VALUE</code>、
+                <code class="side-code-inline">D0_TOTAL_BET_PLACED_USER</code>、
+                <code class="side-code-inline">D0_SPORTS_BET_PLACED_USER</code>、
+                <code class="side-code-inline">D0_GAMES_BET_PLACED_USER</code>、
+                <code class="side-code-inline">D0_SPORTS_BET_FLOW</code>、
+                <code class="side-code-inline">D0_GAMES_BET_FLOW</code>、
+                <code class="side-code-inline">D0_TOTAL_BET_FLOW</code>、
+                <code class="side-code-inline">D7_unique_purchase</code>、
+                <code class="side-code-inline">D7_PURCHASE_VALUE</code>、
+                <code class="side-code-inline">D7_TOTAL_BET_PLACED_USER</code>、
+                <code class="side-code-inline">D7_SPORTS_BET_PLACED_USER</code>、
+                <code class="side-code-inline">D7_GAMES_BET_PLACED_USER</code>、
+                <code class="side-code-inline">D7_SPORTS_BET_FLOW</code>、
+                <code class="side-code-inline">D7_GAMES_BET_FLOW</code>、
+                <code class="side-code-inline">D7_TOTAL_BET_FLOW</code>、
+                <code class="side-code-inline">D1_retained_users</code>、
+                <code class="side-code-inline">D7_retained_users</code>。
               </li>
               <li>字段名大小写不完全一致也能识别，但建议与代码终稿统一。</li>
             </ul>
@@ -723,18 +702,18 @@
             <ul class="side-list">
               <li>Step1：导出当月自然量 Excel（单月，包含每日各国家数据）。</li>
               <li>Step2：确认首行字段名与上方约定一致。</li>
-              <li>Step3：选择月份（可留空，工具会从首行 <code class="inline">date</code> 推断），上传文件。</li>
+              <li>Step3：在本页选择月份（或留空自动识别），上传文件。</li>
               <li>Step4：点击「生成代码」，检查输出结构是否符合预期。</li>
               <li>Step5：点击「一键复制」，黏贴到自然量看板的源数据代码中。</li>
             </ul>
           </div>
 
           <div class="side-block">
-            <div class="side-block-title">3. 日期 & 数字处理说明</div>
+            <div class="side-block-title">3. 小提示</div>
             <ul class="side-list">
-              <li>日期列为 Excel 日期类型 / 数字序列号 / `YYYY-MM-DD` 字符串都能识别。</li>
-              <li>日期只用本地年月日（或 SheetJS 解析结果），不会再因为时区从 `2025-10-01` 变成 `2025-09-30`。</li>
-              <li>数字支持千分位（如 <code class="inline">"1,234.56"</code>），空值会输出为 <code class="inline">0</code>。</li>
+              <li>日期支持 Excel 日期格式、数字序列号、以及 <code class="side-code-inline">YYYY-MM-DD</code> 字符串。</li>
+              <li>带千分位的数字（如 <code class="side-code-inline">1,234.56</code>）会自动去逗号后转为数值。</li>
+              <li>若某个指标单元格为空，将按 <code class="side-code-inline">0</code> 输出。</li>
             </ul>
           </div>
         </aside>
@@ -742,7 +721,7 @@
     </main>
 
     <footer>
-      <span><strong>版本</strong> · v0.3 自然量月度源数据工具页（JS 重写 + 日期修正）</span>
+      <span><strong>版本</strong> · v0.2 自然量月度源数据工具（修复日期时区）</span>
       <span><strong>维护人</strong> · 用户增长部 - Jerry Lyu</span>
     </footer>
   </div>
@@ -763,23 +742,12 @@
 
       function setStatus(message, type) {
         statusEl.textContent = message || "";
-        const t = type || "info";
-        if (statusEl.dataset) {
-          statusEl.dataset.type = t;
-        } else {
-          statusEl.setAttribute("data-type", t);
-        }
-      }
-
-      function pad2(num) {
-        return String(num).padStart(2, "0");
+        statusEl.dataset.type = type || "info";
       }
 
       function getRaw(row, key) {
         if (!row || !key) return undefined;
-        if (Object.prototype.hasOwnProperty.call(row, key)) {
-          return row[key];
-        }
+        if (key in row) return row[key];
         const lower = key.toLowerCase();
         for (const k in row) {
           if (Object.prototype.hasOwnProperty.call(row, k)) {
@@ -792,31 +760,38 @@
       function getNumber(row, key) {
         const raw = getRaw(row, key);
         if (raw === undefined || raw === null || raw === "") return 0;
-        if (typeof raw === "number") {
-          return Number.isFinite(raw) ? raw : 0;
-        }
         const cleaned =
           typeof raw === "string" ? raw.replace(/,/g, "").trim() : raw;
         const num = Number(cleaned);
         return Number.isFinite(num) ? num : 0;
       }
 
-      // 日期归一化：使用本地年月日 / SheetJS 解析，避免时区 -1 天
-      function normalizeDate(value) {
-        if (value === null || value === undefined || value === "") {
-          return "";
-        }
+      function getString(row, key) {
+        const raw = getRaw(row, key);
+        if (raw === undefined || raw === null) return "";
+        return String(raw).trim();
+      }
 
-        // 1）JS Date 对象
-        if (Object.prototype.toString.call(value) === "[object Date]") {
-          if (isNaN(value.getTime())) return "";
-          const y = value.getFullYear();
-          const m = pad2(value.getMonth() + 1);
-          const d = pad2(value.getDate());
+      function pad2(num) {
+        return String(num).padStart(2, "0");
+      }
+
+      // 统一日期标准化：支持 Date / Excel 序列号 / 字符串，避免时区导致少一天
+      function normalizeDate(value) {
+        if (value === null || value === undefined || value === "") return "";
+
+        // 1）Date 对象：按 UTC 取年月日，绕开本地时区
+        if (
+          Object.prototype.toString.call(value) === "[object Date]" &&
+          !isNaN(value.getTime())
+        ) {
+          const y = value.getUTCFullYear();
+          const m = pad2(value.getUTCMonth() + 1);
+          const d = pad2(value.getUTCDate());
           return y + "-" + m + "-" + d;
         }
 
-        // 2）Excel 数字序列号
+        // 2）Excel 数字日期：用 SheetJS 自带解析
         if (typeof value === "number" && Number.isFinite(value)) {
           try {
             if (
@@ -833,34 +808,40 @@
               }
             }
           } catch (e) {
-            // 失败就继续走字符串逻辑
+            // 失败则走字符串逻辑
           }
         }
 
-        // 3）字符串
+        // 3）字符串：兼容 2025-10-01 / 2025/10/1 / 2025.10.1 / 带时间
         const s = String(value).trim();
-        if (!s) return "";
 
-        // 2025-10-01 / 2025/10/1 / 2025.10.1
-        const m1 = s.match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
-        if (m1) {
-          const year = m1[1];
-          const month = pad2(m1[2]);
-          const day = pad2(m1[3]);
-          return year + "-" + month + "-" + day;
+        let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (m) {
+          const y = m[1];
+          const mm = pad2(m[2]);
+          const dd = pad2(m[3]);
+          return y + "-" + mm + "-" + dd;
         }
 
-        // 2025-10 → 默认补成 01 号
+        m = s.match(/^(\d{4})[\/.](\d{1,2})[\/.](\d{1,2})/);
+        if (m) {
+          const y = m[1];
+          const mm = pad2(m[2]);
+          const dd = pad2(m[3]);
+          return y + "-" + mm + "-" + dd;
+        }
+
+        // 4）类似 2025-10 → 默认补 01 号
         if (/^\d{4}-\d{2}$/.test(s)) {
           return s + "-01";
         }
 
-        // 兜底：原样返回
+        // 5）兜底：原样返回，方便肉眼排查
         return s;
       }
 
       function inferMonthKey(rows) {
-        if (!rows || !rows.length) return "";
+        if (!rows || rows.length === 0) return "";
         const first = rows[0];
         const dateVal =
           getRaw(first, "date") ||
@@ -872,9 +853,21 @@
         return dateStr.slice(0, 7);
       }
 
-      function formatRowToObject(dateStr, countryStr, row) {
+      function formatRowToObject(row) {
         const indent1 = "  ";
         const indent2 = "    ";
+
+        const dateVal =
+          getRaw(row, "date") ||
+          getRaw(row, "日期") ||
+          getRaw(row, "Date") ||
+          getRaw(row, "DATE");
+        const dateStr = normalizeDate(dateVal);
+
+        const country =
+          (getString(row, "country") ||
+            getString(row, "国家") ||
+            "").toUpperCase();
 
         const sections = [
           {
@@ -924,12 +917,15 @@
         const lines = [];
         lines.push(indent1 + "{");
         lines.push(
-          indent2 + 'date: "' + dateStr + '", // YYYY-MM-DD'
+          indent2 +
+            'date: "' +
+            dateStr +
+            '", // YYYY-MM-DD'
         );
         lines.push(
           indent2 +
             'country: "' +
-            countryStr +
+            country +
             '", // GH / KE / NG / TZ / UG'
         );
         lines.push("");
@@ -962,28 +958,19 @@
           return;
         }
 
-        if (typeof XLSX === "undefined") {
-          parsedRows = [];
-          outputEl.value = "";
-          copyBtn.disabled = true;
-          setStatus("XLSX 库未加载，检查网络或将 xlsx.full.min.js 本地部署。", "error");
-          return;
-        }
-
         const reader = new FileReader();
-
         reader.onload = function (e) {
           try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {
               type: "array",
-              cellDates: true,
+              cellDates: true, // 日期列转 Date 对象
             });
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
             const json = XLSX.utils.sheet_to_json(worksheet, {
               defval: null,
-              raw: true,
+              raw: true, // 保留原始类型，交给 normalizeDate 处理
             });
 
             parsedRows = (json || []).filter(function (row) {
@@ -1018,7 +1005,7 @@
             outputEl.value = "";
             copyBtn.disabled = true;
             setStatus(
-              "解析 Excel 失败，请确认文件为 .xlsx / .xls 且首行为字段名。",
+              "解析 Excel 失败，请确认文件为 .xlsx / .xls / .csv 且首行为字段名。",
               "error"
             );
           }
@@ -1053,38 +1040,9 @@
           monthInput.value = monthKey;
         }
 
-        const objects = [];
-        let minDate = null;
-        let maxDate = null;
-
-        parsedRows.forEach(function (row) {
-          const dateVal =
-            getRaw(row, "date") ||
-            getRaw(row, "日期") ||
-            getRaw(row, "Date") ||
-            getRaw(row, "DATE");
-          const dateStr = normalizeDate(dateVal);
-          if (!dateStr) return;
-
-          const rawCountry =
-            getRaw(row, "country") || getRaw(row, "国家") || "";
-          const countryStr = String(rawCountry || "").trim().toUpperCase();
-
-          const objStr = formatRowToObject(dateStr, countryStr, row);
-          objects.push(objStr);
-
-          if (dateStr && dateStr.length >= 10) {
-            if (!minDate || dateStr < minDate) minDate = dateStr;
-            if (!maxDate || dateStr > maxDate) maxDate = dateStr;
-          }
+        const objects = parsedRows.map(function (row) {
+          return formatRowToObject(row);
         });
-
-        if (!objects.length) {
-          setStatus("没有生成任何记录，请检查日期列是否为空。", "error");
-          outputEl.value = "";
-          copyBtn.disabled = true;
-          return;
-        }
 
         const code =
           '"' +
@@ -1095,16 +1053,7 @@
 
         outputEl.value = code;
         copyBtn.disabled = !code;
-        setStatus(
-          "代码已生成：共 " +
-            objects.length +
-            " 条记录，日期范围 " +
-            (minDate || "?") +
-            " ~ " +
-            (maxDate || "?") +
-            "。",
-          "success"
-        );
+        setStatus("代码已生成，可点击「一键复制」复制到剪贴板。", "success");
       }
 
       function fallbackCopy(textarea) {
