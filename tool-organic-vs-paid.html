@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.0)</title>
+  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.1 扁平版)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
@@ -103,15 +103,15 @@
 
 <div class="container">
   <header class="header">
-    <h1>BangBet 数据转换工具 v4.0</h1>
-    <p>Excel 源数据 (English Header) → Dashboard Code Generator</p>
+    <h1>BangBet 数据转换工具 v4.1</h1>
+    <p>Excel 源数据 (English Header) → 扁平数组 (Flat Array)</p>
   </header>
 
   <section class="card">
     <div class="card-header">
       <div class="card-title">
         <span>🌿 自然量 (Organic)</span>
-        <span class="tag">Mapping: Dashboard Data.js</span>
+        <span class="tag">Format: [ {...}, {...} ]</span>
       </div>
       <button class="btn-copy" id="copy-org">复制自然量代码</button>
     </div>
@@ -121,12 +121,12 @@
       <button class="btn-gen" id="gen-org">生成自然量 JS</button>
     </div>
     
-    <textarea id="out-org" placeholder="// 步骤 1：上传【10月自然量数据.xlsx】
+    <textarea id="out-org" placeholder="// 步骤 1：上传【自然量数据.xlsx】
 // 步骤 2：点击「生成自然量 JS」
-// 步骤 3：结果会自动按月份分组，直接复制粘贴到 data.js 的 RAW_ORGANIC_BY_MONTH 中"></textarea>
+// 步骤 3：结果是一个扁平数组，可直接赋值给 const RAW_ORGANIC = ..."></textarea>
 
     <div class="tips">
-      <strong>说明：</strong> 程序会自动提取 <code>D0_SPORTS_BET_FLOW</code>, <code>D0_PURCHASE_VALUE</code> 等所有看板需要的字段，保持原始列名不变，确保 <code>data.js</code> 能直接读取。
+      <strong>说明：</strong> 输出不再包含 <code>"YYYY-MM": [...]</code> 的外层 Key，直接生成所有数据的扁平数组。字段名保持 Excel 原名（如 <code>D0_SPORTS_BET_FLOW</code>）。
     </div>
   </section>
 
@@ -134,7 +134,7 @@
     <div class="card-header">
       <div class="card-title">
         <span>💰 买量 (Paid)</span>
-        <span class="tag">含 Media / Product_type</span>
+        <span class="tag">Format: [ {...}, {...} ]</span>
       </div>
       <button class="btn-copy" id="copy-paid">复制买量代码</button>
     </div>
@@ -144,12 +144,12 @@
       <button class="btn-gen" id="gen-paid">生成买量 JS</button>
     </div>
     
-    <textarea id="out-paid" placeholder="// 步骤 1：上传【10月买量数据_final.xlsx】
+    <textarea id="out-paid" placeholder="// 步骤 1：上传【买量数据.xlsx】
 // 步骤 2：点击「生成买量 JS」
-// 步骤 3：复制粘贴到 paid-monthly/data.js 中"></textarea>
+// 步骤 3：结果是一个扁平数组，可直接赋值给 const RAW_PAID = ..."></textarea>
 
     <div class="tips">
-      <strong>说明：</strong> 自动映射 <code>spent</code> → <code>spend</code>，<code>Product_type</code> → <code>productType</code>，其余字段（如 <code>D7_TOTAL_BET_FLOW</code>）保持原名。
+      <strong>说明：</strong> 自动映射 <code>spent</code> → <code>spend</code>，<code>Product_type</code> → <code>productType</code>。输出为扁平数组。
     </div>
   </section>
 </div>
@@ -187,11 +187,10 @@
     
     const headers = data[0]; // 第一行是表头
     const rows = data.slice(1);
-    const result = {};
+    const result = []; // 【改动点】这里改成了数组，而不是对象
 
     // 查找关键列的索引
     const col = {};
-    // 这里的 key 是 Excel 表头，我们直接找对应的列下标
     const targetFields = [
       "date", "country", "registration",
       "D0_unique_purchase", "D0_PURCHASE_VALUE",
@@ -215,43 +214,44 @@
       const dateVal = formatDate(row[col.date]);
       if (!dateVal) return; // 跳过无效行
 
-      const monthKey = dateVal.slice(0, 7); // "2025-10"
-      if (!result[monthKey]) result[monthKey] = [];
+      const monthKey = dateVal.slice(0, 7); // "2025-10" (保留月份字段，方便后续筛选)
 
       // 构建 JS 对象字符串
-      let itemStr = `    {
-      date: "${dateVal}",
-      country: "${String(row[col.country]).trim().toUpperCase()}",`;
+      let itemStr = `  {
+    month: "${monthKey}",
+    date: "${dateVal}",
+    country: "${String(row[col.country]).trim().toUpperCase()}",`;
       
       // 动态添加所有数值字段
       targetFields.forEach(field => {
         if (field === 'date' || field === 'country') return;
         const val = col[field] > -1 ? formatNum(row[col[field]]) : 0;
-        itemStr += `\n      ${field}: ${val},`;
+        itemStr += `\n    ${field}: ${val},`;
       });
 
-      itemStr += `\n    }`;
-      result[monthKey].push(itemStr);
+      itemStr += `\n  }`;
+      
+      // 【改动点】直接将每个对象放入数组，并存储日期用于排序
+      result.push({ date: dateVal, str: itemStr });
     });
 
-    // 拼接最终输出
-    let finalCode = "";
-    Object.keys(result).sort().forEach(m => {
-      finalCode += `// ${m} 数据\n"${m}": [\n${result[m].join(',\n')}\n],\n\n`;
-    });
-    return finalCode || "// 未提取到有效数据";
+    // 【改动点】按日期排序，保证输出整齐
+    result.sort((a, b) => a.date.localeCompare(b.date));
+
+    // 拼接最终输出：直接是一个大数组
+    if (result.length === 0) return "// 未提取到有效数据";
+    return `[\n${result.map(i => i.str).join(',\n')}\n]`;
   }
 
-  // 2. 买量转换 (逻辑类似，但字段略有不同)
+  // 2. 买量转换
   function processPaid(data) {
     if (!data || data.length < 2) return "// Excel 无数据";
     
     const headers = data[0];
     const rows = data.slice(1);
-    const result = {};
+    const result = []; // 【改动点】数组结构
 
     const col = {};
-    // 买量特有字段 + 通用字段
     const targetFields = [
       "date", "country", "media", "Product_type", "spent", // 基础信息
       "registration",
@@ -275,20 +275,20 @@
       if (!dateVal) return;
 
       const monthKey = dateVal.slice(0, 7);
-      if (!result[monthKey]) result[monthKey] = [];
 
       // 特殊处理字符串字段
       const media = col.media > -1 ? String(row[col.media]).trim() : "";
       const pType = col.Product_type > -1 ? String(row[col.Product_type]).trim() : "";
       const country = col.country > -1 ? String(row[col.country]).trim().toUpperCase() : "";
 
-      let itemStr = `    {
-      date: "${dateVal}",
-      country: "${country}",
-      media: "${media}",
-      productType: "${pType}",`; // 修正：Excel头是Product_type，JS里叫productType
+      let itemStr = `  {
+    month: "${monthKey}",
+    date: "${dateVal}",
+    country: "${country}",
+    media: "${media}",
+    productType: "${pType}",`; 
       
-      // 处理数值字段 (注意 spent -> spend 映射)
+      // 处理数值字段
       targetFields.forEach(field => {
         if (["date", "country", "media", "Product_type"].includes(field)) return;
         
@@ -296,18 +296,20 @@
         if (field === "spent") jsKey = "spend"; // 映射 spent -> spend
 
         const val = col[field] > -1 ? formatNum(row[col[field]]) : 0;
-        itemStr += `\n      ${jsKey}: ${val},`;
+        itemStr += `\n    ${jsKey}: ${val},`;
       });
 
-      itemStr += `\n    }`;
-      result[monthKey].push(itemStr);
+      itemStr += `\n  }`;
+      
+      // 【改动点】存入数组
+      result.push({ date: dateVal, str: itemStr });
     });
 
-    let finalCode = "";
-    Object.keys(result).sort().forEach(m => {
-      finalCode += `// ${m} 买量数据\n"${m}": [\n${result[m].join(',\n')}\n],\n\n`;
-    });
-    return finalCode || "// 未提取到有效数据";
+    // 【改动点】排序
+    result.sort((a, b) => a.date.localeCompare(b.date));
+
+    if (result.length === 0) return "// 未提取到有效数据";
+    return `[\n${result.map(i => i.str).join(',\n')}\n]`;
   }
 
   // ================= 事件绑定 =================
@@ -336,22 +338,3 @@
 
   // 复制按钮
   function copyToClipboard(id) {
-    const el = document.getElementById(id);
-    el.select();
-    document.execCommand('copy');
-    const originalText = el.previousElementSibling.innerText; 
-    // 简单的反馈动画
-    const btn = id === 'out-org' ? document.getElementById('copy-org') : document.getElementById('copy-paid');
-    const originBtnText = btn.innerText;
-    btn.innerText = '✅ 已复制';
-    setTimeout(() => btn.innerText = originBtnText, 1500);
-  }
-
-  document.getElementById('copy-org').onclick = () => copyToClipboard('out-org');
-  document.getElementById('copy-paid').onclick = () => copyToClipboard('out-paid');
-
-})();
-</script>
-
-</body>
-</html>
