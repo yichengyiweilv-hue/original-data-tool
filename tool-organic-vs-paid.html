@@ -2,858 +2,356 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>自然量 & 买量 Excel → JS 源数据转换工具</title>
+  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.0)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
-      --bg: #f9fafb;
+      --bg: #f3f5f9;
       --card: #ffffff;
-      --border: #e5e7eb;
-      --border-soft: #d1d5db;
-      --text-main: #111827;
-      --text-sub: #6b7280;
-      --accent: #0ea5e9;
-      --accent-soft: rgba(14,165,233,0.08);
-      --accent-strong: #0284c7;
-      --radius-lg: 16px;
-      --radius-md: 10px;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --radius: 12px;
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
-      margin: 0;
-      padding: 16px;
+      margin: 0; padding: 24px;
       background: var(--bg);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        "PingFang SC", "Microsoft Yahei", sans-serif;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: var(--text-main);
-      -webkit-font-smoothing: antialiased;
     }
-
-    .page {
-      max-width: 1120px;
-      margin: 0 auto;
-    }
-
+    .container { max-width: 1000px; margin: 0 auto; }
+    
+    /* 顶部区域 */
     .header {
-      margin-bottom: 16px;
-      padding: 16px 18px 12px;
-      border-radius: 18px;
-      border: 1px solid var(--border-soft);
-      background: radial-gradient(
-        circle at top left,
-        #eff6ff 0,
-        #e0f2fe 40%,
-        #f9fafb 100%
-      );
-      box-shadow: 0 10px 24px rgba(148, 163, 184, 0.35);
+      margin-bottom: 24px;
+      text-align: center;
     }
-
-    .header-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: #0f172a;
+    .header h1 {
+      font-size: 24px; font-weight: 700; margin: 0 0 8px 0;
+      background: linear-gradient(135deg, #2563eb, #16a34a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
+    .header p { font-size: 13px; color: var(--text-sub); margin: 0; }
 
-    .header-sub {
-      font-size: 12px;
-      color: var(--text-sub);
-      margin-bottom: 6px;
-    }
-
-    .header-note {
-      font-size: 11px;
-      color: var(--text-sub);
-      line-height: 1.6;
-    }
-
-    .badge-row {
-      margin-top: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .badge {
-      font-size: 10px;
-      border-radius: 999px;
-      padding: 3px 8px;
-      border: 1px solid #cbd5f5;
-      background: #eef2ff;
-      color: #4f46e5;
-    }
-
-    .main-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
-    }
-
-    @media (max-width: 960px) {
-      .main-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-    }
-
+    /* 卡片通用样式 */
     .card {
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border);
       background: var(--card);
-      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
-      padding: 12px 12px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-height: 260px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
     }
-
     .card-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-      padding-bottom: 6px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; padding-bottom: 12px;
       border-bottom: 1px solid var(--border);
     }
-
-    .card-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: #111827;
+    .card-title { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+    .tag { 
+      font-size: 11px; padding: 2px 8px; border-radius: 99px; 
+      background: #eff6ff; color: #2563eb; font-weight: 500;
     }
-
-    .card-sub {
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-top: 2px;
+    
+    /* 文件上传区 */
+    .control-row {
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 12px;
     }
-
-    .file-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-top: 4px;
-    }
-
-    .file-input {
-      font-size: 11px;
-      color: var(--text-main);
-    }
-
     input[type="file"] {
-      max-width: 260px;
-    }
-
-    .btn-copy,
-    .btn-generate {
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 11px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      background: transparent;
-    }
-
-    .btn-copy {
-      border-color: var(--border-soft);
-      color: var(--text-sub);
-      background: #f9fafb;
-    }
-
-    .btn-copy:hover {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      color: var(--accent-strong);
-    }
-
-    .btn-generate {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      color: var(--accent-strong);
-    }
-
-    .btn-generate:hover {
-      background: rgba(14, 165, 233, 0.16);
-      border-color: var(--accent-strong);
-    }
-
-    .output {
+      font-size: 12px; padding: 8px;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      background: #f8fafc;
       flex: 1;
-      min-height: 200px;
-      margin-top: 4px;
+      min-width: 200px;
     }
+    button {
+      padding: 8px 16px;
+      border-radius: 6px; border: none;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-gen { background: var(--accent); color: white; }
+    .btn-gen:hover { background: var(--accent-hover); }
+    .btn-copy { background: #f1f5f9; color: var(--text-main); }
+    .btn-copy:hover { background: #e2e8f0; }
 
+    /* 文本域 */
     textarea {
-      width: 100%;
-      height: 100%;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-soft);
-      background: #f9fafb;
-      color: var(--text-main);
-      font-size: 11px;
-      padding: 8px;
-      resize: vertical;
-      font-family: Menlo, Consolas, "SF Mono", monospace;
-      line-height: 1.5;
-      outline: none;
-      white-space: pre;
+      width: 100%; height: 220px;
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; font-family: 'Menlo', 'Monaco', monospace;
+      font-size: 11px; line-height: 1.5; color: #334155;
+      background: #f8fafc; resize: vertical; outline: none;
     }
+    textarea:focus { border-color: var(--accent); background: #fff; }
 
-    textarea::placeholder {
-      color: #9ca3af;
+    /* 提示信息 */
+    .tips {
+      font-size: 11px; color: #94a3b8; margin-top: 8px; line-height: 1.6;
+      background: #f8fafc; padding: 8px 12px; border-radius: 6px;
     }
-
-    .hint {
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-top: 4px;
-      line-height: 1.5;
-    }
-
-    .hint strong {
-      color: #111827;
-    }
-
-    .footer {
-      margin-top: 14px;
-      font-size: 11px;
-      color: var(--text-sub);
-      text-align: right;
-      border-top: 1px dashed var(--border-soft);
-      padding-top: 6px;
-    }
+    code { background: #e2e8f0; padding: 1px 4px; border-radius: 4px; color: #0f172a; }
   </style>
 </head>
 <body>
-  <div class="page">
-    <header class="header">
-      <div class="header-title">自然量 & 买量 Excel → JS 源数据转换工具</div>
-      <div class="header-sub">
-        上传 Excel 后，点击「生成 code」，得到可以直接粘贴到你看板数据源的
-        <code>"YYYY-MM": [ { month: "YYYY-MM", ... } ]</code> 片段。
+
+<div class="container">
+  <header class="header">
+    <h1>BangBet 数据转换工具 v4.0</h1>
+    <p>Excel 源数据 (English Header) → Dashboard Code Generator</p>
+  </header>
+
+  <section class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span>🌿 自然量 (Organic)</span>
+        <span class="tag">Mapping: Dashboard Data.js</span>
       </div>
-      <div class="header-note">
-        · 自然量：默认读取 Excel 的第一个 sheet，首行为英文表头（<code>date</code> /
-        <code>country</code> / <code>registration</code> / 各类 D0 / D7 字段），下面每行是「日期 × 国家」数据。<br />
-        · 买量：同样默认读取第一个 sheet，首行为英文表头（<code>date</code> /
-        <code>country</code> / <code>media</code> / <code>Product_type</code> /
-        <code>spent</code> / 各类 D0 / D7 字段）。<br />
-        · 输出示例：<code>"2025-10": [ { month: "2025-10", date: "2025-10-01", country: "GH", ... } ]</code>。
+      <button class="btn-copy" id="copy-org">复制自然量代码</button>
+    </div>
+    
+    <div class="control-row">
+      <input type="file" id="file-org" accept=".xlsx, .xls, .csv" />
+      <button class="btn-gen" id="gen-org">生成自然量 JS</button>
+    </div>
+    
+    <textarea id="out-org" placeholder="// 步骤 1：上传【10月自然量数据.xlsx】
+// 步骤 2：点击「生成自然量 JS」
+// 步骤 3：结果会自动按月份分组，直接复制粘贴到 data.js 的 RAW_ORGANIC_BY_MONTH 中"></textarea>
+
+    <div class="tips">
+      <strong>说明：</strong> 程序会自动提取 <code>D0_SPORTS_BET_FLOW</code>, <code>D0_PURCHASE_VALUE</code> 等所有看板需要的字段，保持原始列名不变，确保 <code>data.js</code> 能直接读取。
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span>💰 买量 (Paid)</span>
+        <span class="tag">含 Media / Product_type</span>
       </div>
-      <div class="badge-row">
-        <span class="badge">白色系主题 · 纯前端 · 无需安装软件</span>
-        <span class="badge">输出字段对齐你当前看板模版</span>
-      </div>
-    </header>
+      <button class="btn-copy" id="copy-paid">复制买量代码</button>
+    </div>
+    
+    <div class="control-row">
+      <input type="file" id="file-paid" accept=".xlsx, .xls, .csv" />
+      <button class="btn-gen" id="gen-paid">生成买量 JS</button>
+    </div>
+    
+    <textarea id="out-paid" placeholder="// 步骤 1：上传【10月买量数据_final.xlsx】
+// 步骤 2：点击「生成买量 JS」
+// 步骤 3：复制粘贴到 paid-monthly/data.js 中"></textarea>
 
-    <main class="main-grid">
-      <!-- 自然量 -->
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">自然量 Excel → JS 片段</div>
-            <div class="card-sub">
-              输出格式：<code>"YYYY-MM": [ { month, date, country, regs, d0Payers, d7Payers, ... } ]</code>，
-              直接粘贴到自然量月度看板的数据对象。
-            </div>
-          </div>
-          <button type="button" class="btn-copy" id="copy-org">复制自然量 code</button>
-        </div>
+    <div class="tips">
+      <strong>说明：</strong> 自动映射 <code>spent</code> → <code>spend</code>，<code>Product_type</code> → <code>productType</code>，其余字段（如 <code>D7_TOTAL_BET_FLOW</code>）保持原名。
+    </div>
+  </section>
+</div>
 
-        <div class="file-row">
-          <span>自然量 Excel：</span>
-          <input
-            type="file"
-            id="organic-file"
-            class="file-input"
-            accept=".xlsx,.xls,.csv"
-          />
-          <button type="button" class="btn-generate" id="gen-org">
-            生成自然量 code
-          </button>
-        </div>
-
-        <div class="hint">
-          · 要求：首行为英文表头，至少包含
-          <strong>date</strong> / <strong>country</strong> /
-          <strong>registration</strong> /
-          <strong>D0_unique_purchase</strong> /
-          <strong>D7_unique_purchase</strong> /
-          <strong>D0_SPORTS_GGR_VALUE</strong> /
-          <strong>D7_SPORTS_GGR_VALUE</strong> /
-          <strong>D0_GAMES_GGR_VALUE</strong> /
-          <strong>D7_GAMES_GGR_VALUE</strong> /
-          <strong>D1_retained_users</strong> /
-          <strong>D7_retained_users</strong> 等列。<br />
-          · <code>retentionD1</code> / <code>retentionD7</code> =
-          对应留存人数 ÷ <code>registration</code>，输出为小数（如 0.35）。
-        </div>
-
-        <div class="output">
-          <textarea
-            id="organic-output"
-            placeholder='上传自然量 Excel 后，点击「生成自然量 code」，这里会生成类似：
-
-// ===== 2025-10 自然量（粘贴到自然量月度看板数据对象中） =====
-"2025-10": [
-  {
-    month: "2025-10",
-    date: "2025-10-01",
-    country: "GH", // GH / KE / NG / TZ / UG
-    regs: 302,
-    d0Payers: 138,
-    d7Payers: 172,
-    ggrSportsD0: 93.48,
-    ggrSportsD7: 532.02,
-    ggrGamesD0: 2211.0,
-    ggrGamesD7: 16393.33,
-    sportsPlayers: 108,
-    gamesPlayers: 138,
-    retentionD1: 0.46,
-    retentionD7: 0.20,
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(function() {
+  // ================= 工具函数 =================
+  function formatNum(val) {
+    if (val === null || val === undefined || val === '') return 0;
+    const n = Number(val);
+    return Number.isNaN(n) ? 0 : Number(n.toFixed(2).replace(/\.00$/, ''));
   }
-  // ... 其他日期 × 国家
-]'
-          ></textarea>
-        </div>
-      </section>
 
-      <!-- 买量 -->
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">买量 Excel → JS 片段</div>
-            <div class="card-sub">
-              输出格式：
-              <code>"YYYY-MM": [ { month, date, country, media, productType, spend, ... } ]</code>，
-              直接粘贴到买量月度看板的数据对象。
-            </div>
-          </div>
-          <button type="button" class="btn-copy" id="copy-paid">复制买量 code</button>
-        </div>
-
-        <div class="file-row">
-          <span>买量 Excel：</span>
-          <input
-            type="file"
-            id="paid-file"
-            class="file-input"
-            accept=".xlsx,.xls,.csv"
-          />
-          <button type="button" class="btn-generate" id="gen-paid">
-            生成买量 code
-          </button>
-        </div>
-
-        <div class="hint">
-          · 要求：首行为英文表头，至少包含
-          <strong>date</strong> / <strong>country</strong> /
-          <strong>media</strong> / <strong>Product_type</strong> /
-          <strong>spent</strong> / <strong>registration</strong> /
-          <strong>D0_unique_purchase</strong> /
-          <strong>D7_unique_purchase</strong> /
-          <strong>D0_SPORTS_GGR_VALUE</strong> /
-          <strong>D7_SPORTS_GGR_VALUE</strong> /
-          <strong>D0_GAMES_GGR_VALUE</strong> /
-          <strong>D7_GAMES_GGR_VALUE</strong> /
-          <strong>D1_retained_users</strong> /
-          <strong>D7_retained_users</strong> 等列。<br />
-          · <code>spend</code> 来自 <code>spent</code> 列，留存率计算逻辑同自然量。
-        </div>
-
-        <div class="output">
-          <textarea
-            id="paid-output"
-            placeholder='上传买量 Excel 后，点击「生成买量 code」，这里会生成类似：
-
-// ===== 2025-10 买量（粘贴到买量月度看板数据对象中） =====
-"2025-10": [
-  {
-    month: "2025-10",
-    date: "2025-10-01",
-    country: "GH",
-    regs: 200,
-    d0Payers: 45,
-    d7Payers: 70,
-    ggrSportsD0: 160.0,
-    ggrSportsD7: 420.0,
-    ggrGamesD0: 330.0,
-    ggrGamesD7: 1830.0,
-    sportsPlayers: 32,
-    gamesPlayers: 72,
-    retentionD1: 0.40,
-    retentionD7: 0.22,
-    // 买量特有字段
-    spend: 500.0,
-    media: "META",
-    productType: "app",
+  function formatDate(val) {
+    if (!val) return null;
+    // 处理 Excel 序列号日期
+    if (typeof val === 'number') {
+      const date = XLSX.SSF.parse_date_code(val);
+      if (date) {
+        return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+      }
+    }
+    // 处理字符串日期 (YYYY-MM-DD)
+    const str = String(val).trim();
+    if (str.match(/^\d{4}-\d{2}-\d{2}$/)) return str;
+    return str; 
   }
-  // ... 其他日期 × 国家 × 渠道 / 产品
-]'
-          ></textarea>
-        </div>
-      </section>
-    </main>
 
-    <footer class="footer">
-      使用建议：每月导出自然量 / 买量 Excel 后，用本页面生成对应月份 JS 片段，直接粘贴到各看板的数据源区域。
-    </footer>
-  </div>
+  // ================= 核心转换逻辑 =================
+  
+  // 1. 自然量转换
+  function processOrganic(data) {
+    if (!data || data.length < 2) return "// Excel 无数据";
+    
+    const headers = data[0]; // 第一行是表头
+    const rows = data.slice(1);
+    const result = {};
 
-  <!-- XLSX 解析库：在线 CDN，免安装 -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script>
-    function formatJsNumber(value) {
-      if (value === null || value === undefined || value === "") return "0";
-      var num = Number(value);
-      if (!Number.isFinite(num)) return "0";
-      if (Math.abs(num - Math.round(num)) < 1e-9) {
-        return String(Math.round(num));
-      }
-      return num.toFixed(2).replace(/\.00$/, "");
-    }
+    // 查找关键列的索引
+    const col = {};
+    // 这里的 key 是 Excel 表头，我们直接找对应的列下标
+    const targetFields = [
+      "date", "country", "registration",
+      "D0_unique_purchase", "D0_PURCHASE_VALUE",
+      "D0_TOTAL_BET_PLACED_USER", "D0_SPORTS_BET_PLACED_USER", "D0_GAMES_BET_PLACED_USER",
+      "D0_SPORTS_BET_FLOW", "D0_GAMES_BET_FLOW", "D0_TOTAL_BET_FLOW",
+      "D7_unique_purchase", "D7_PURCHASE_VALUE",
+      "D7_TOTAL_BET_PLACED_USER", "D7_SPORTS_BET_PLACED_USER", "D7_GAMES_BET_PLACED_USER",
+      "D7_SPORTS_BET_FLOW", "D7_GAMES_BET_FLOW", "D7_TOTAL_BET_FLOW",
+      "D1_retained_users", "D7_retained_users"
+    ];
 
-    function normalizeDateCell(v) {
-      if (v === null || v === undefined || v === "") return null;
-
-      if (v instanceof Date) {
-        var y = v.getFullYear();
-        var m = String(v.getMonth() + 1).padStart(2, "0");
-        var d = String(v.getDate()).padStart(2, "0");
-        return y + "-" + m + "-" + d;
-      }
-
-      if (typeof v === "number") {
-        if (
-          typeof XLSX !== "undefined" &&
-          XLSX.SSF &&
-          XLSX.SSF.parse_date_code
-        ) {
-          var o = XLSX.SSF.parse_date_code(v);
-          if (o && o.y && o.m && o.d) {
-            var y2 = o.y;
-            var m2 = String(o.m).padStart(2, "0");
-            var d2 = String(o.d).padStart(2, "0");
-            return y2 + "-" + m2 + "-" + d2;
-          }
-        }
-      }
-
-      if (typeof v === "string") {
-        var m = v.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-        if (m) {
-          var y3 = m[1];
-          var m3 = String(parseInt(m[2], 10)).padStart(2, "0");
-          var d3 = String(parseInt(m[3], 10)).padStart(2, "0");
-          return y3 + "-" + m3 + "-" + d3;
-        }
-      }
-      return null;
-    }
-
-    function buildOrganicCode(workbook) {
-      var sheetName =
-        workbook.SheetNames && workbook.SheetNames.length
-          ? workbook.SheetNames[0]
-          : null;
-      var sheet = sheetName ? workbook.Sheets[sheetName] : null;
-      if (!sheet) {
-        return "// 未找到任何 sheet（请检查 Excel 文件）";
-      }
-
-      var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
-      if (!rows || !rows.length) {
-        return "// 表内没有数据";
-      }
-
-      var header = rows[0] || [];
-      function idx(name) {
-        return header.indexOf(name);
-      }
-
-      var idxDate = idx("date");
-      var idxCountry = idx("country");
-      if (idxDate < 0 || idxCountry < 0) {
-        return "// 表头缺少必需字段：date / country（请确认首行为英文字段名）";
-      }
-
-      var colIdx = {
-        registration: idx("registration"),
-        d0Payers: idx("D0_unique_purchase"),
-        d7Payers: idx("D7_unique_purchase"),
-        ggrSportsD0: idx("D0_SPORTS_GGR_VALUE"),
-        ggrSportsD7: idx("D7_SPORTS_GGR_VALUE"),
-        ggrGamesD0: idx("D0_GAMES_GGR_VALUE"),
-        ggrGamesD7: idx("D7_GAMES_GGR_VALUE"),
-        sportsPlayers: idx("D7_SPORTS_BET_PLACED_USER"),
-        gamesPlayers: idx("D7_GAMES_BET_PLACED_USER"),
-        d1Retained: idx("D1_retained_users"),
-        d7Retained: idx("D7_retained_users"),
-      };
-
-      var monthMap = {};
-
-      for (var i = 1; i < rows.length; i++) {
-        var r = rows[i];
-        if (!r || !r.length) continue;
-
-        var dateStr = normalizeDateCell(r[idxDate]);
-        if (!dateStr) continue;
-
-        var monthKey = dateStr.slice(0, 7);
-        var rawCountry = r[idxCountry];
-        if (!rawCountry) continue;
-        var country = String(rawCountry).trim().toUpperCase();
-
-        function cellValue(key) {
-          var index = colIdx[key];
-          if (index == null || index < 0) return null;
-          return r[index];
-        }
-
-        var regNum = 0;
-        if (colIdx.registration != null && colIdx.registration >= 0) {
-          var regCell = r[colIdx.registration];
-          regNum = Number(regCell);
-          if (!Number.isFinite(regNum)) regNum = 0;
-        }
-
-        var d1Count = 0;
-        if (colIdx.d1Retained != null && colIdx.d1Retained >= 0) {
-          var c1 = r[colIdx.d1Retained];
-          d1Count = Number(c1);
-          if (!Number.isFinite(d1Count)) d1Count = 0;
-        }
-
-        var d7Count = 0;
-        if (colIdx.d7Retained != null && colIdx.d7Retained >= 0) {
-          var c7 = r[colIdx.d7Retained];
-          d7Count = Number(c7);
-          if (!Number.isFinite(d7Count)) d7Count = 0;
-        }
-
-        var retentionD1 = regNum > 0 ? d1Count / regNum : 0;
-        var retentionD7 = regNum > 0 ? d7Count / regNum : 0;
-
-        var lines = [];
-        lines.push("  {");
-        lines.push('    month: "' + monthKey + '",');
-        lines.push('    date: "' + dateStr + '",');
-        lines.push('    country: "' + country + '",');
-        lines.push("    regs: " + formatJsNumber(cellValue("registration")) + ",");
-        lines.push("    d0Payers: " + formatJsNumber(cellValue("d0Payers")) + ",");
-        lines.push("    d7Payers: " + formatJsNumber(cellValue("d7Payers")) + ",");
-        lines.push(
-          "    ggrSportsD0: " + formatJsNumber(cellValue("ggrSportsD0")) + ","
-        );
-        lines.push(
-          "    ggrSportsD7: " + formatJsNumber(cellValue("ggrSportsD7")) + ","
-        );
-        lines.push(
-          "    ggrGamesD0: " + formatJsNumber(cellValue("ggrGamesD0")) + ","
-        );
-        lines.push(
-          "    ggrGamesD7: " + formatJsNumber(cellValue("ggrGamesD7")) + ","
-        );
-        lines.push(
-          "    sportsPlayers: " +
-            formatJsNumber(cellValue("sportsPlayers")) +
-            ","
-        );
-        lines.push(
-          "    gamesPlayers: " +
-            formatJsNumber(cellValue("gamesPlayers")) +
-            ","
-        );
-        lines.push("    retentionD1: " + formatJsNumber(retentionD1) + ",");
-        lines.push("    retentionD7: " + formatJsNumber(retentionD7) + ",");
-        lines.push("  }");
-
-        if (!monthMap[monthKey]) monthMap[monthKey] = [];
-        monthMap[monthKey].push(lines.join("\n"));
-      }
-
-      var monthKeys = Object.keys(monthMap).sort();
-      if (!monthKeys.length) {
-        return "// 没读到任何有效自然量数据行";
-      }
-
-      var out = [];
-      monthKeys.forEach(function (mk, idx) {
-        out.push(
-          "// ===== " + mk + " 自然量（粘贴到自然量月度看板数据对象中） ====="
-        );
-        out.push('"' + mk + '": [');
-        out.push(monthMap[mk].join(",\n"));
-        out.push("]");
-        if (idx < monthKeys.length - 1) {
-          out.push("");
-          out.push("");
-        }
-      });
-
-      return out.join("\n");
-    }
-
-    function buildPaidCode(workbook) {
-      var sheetName =
-        workbook.SheetNames && workbook.SheetNames.length
-          ? workbook.SheetNames[0]
-          : null;
-      var sheet = sheetName ? workbook.Sheets[sheetName] : null;
-      if (!sheet) {
-        return "// 未找到任何 sheet（请检查 Excel 文件）";
-      }
-
-      var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
-      if (!rows || !rows.length) {
-        return "// 表内没有数据";
-      }
-
-      var header = rows[0] || [];
-      function idx(name) {
-        return header.indexOf(name);
-      }
-
-      var idxDate = idx("date");
-      var idxCountry = idx("country");
-      var idxMedia = idx("media");
-      var idxProductType = idx("Product_type");
-      var idxSpent = idx("spent");
-
-      if (
-        idxDate < 0 ||
-        idxCountry < 0 ||
-        idxMedia < 0 ||
-        idxProductType < 0 ||
-        idxSpent < 0
-      ) {
-        return "// 表头缺少必需字段：date / country / media / Product_type / spent";
-      }
-
-      var colIdx = {
-        registration: idx("registration"),
-        d0Payers: idx("D0_unique_purchase"),
-        d7Payers: idx("D7_unique_purchase"),
-        ggrSportsD0: idx("D0_SPORTS_GGR_VALUE"),
-        ggrSportsD7: idx("D7_SPORTS_GGR_VALUE"),
-        ggrGamesD0: idx("D0_GAMES_GGR_VALUE"),
-        ggrGamesD7: idx("D7_GAMES_GGR_VALUE"),
-        sportsPlayers: idx("D7_SPORTS_BET_PLACED_USER"),
-        gamesPlayers: idx("D7_GAMES_BET_PLACED_USER"),
-        d1Retained: idx("D1_retained_users"),
-        d7Retained: idx("D7_retained_users"),
-        spent: idx("spent"),
-      };
-
-      var monthMap = {};
-
-      for (var i = 1; i < rows.length; i++) {
-        var r = rows[i];
-        if (!r || !r.length) continue;
-
-        var dateStr = normalizeDateCell(r[idxDate]);
-        if (!dateStr) continue;
-
-        var monthKey = dateStr.slice(0, 7);
-        var rawCountry = r[idxCountry];
-        if (!rawCountry) continue;
-        var country = String(rawCountry).trim().toUpperCase();
-
-        var media = r[idxMedia] != null ? String(r[idxMedia]).trim() : "";
-        var productType =
-          r[idxProductType] != null ? String(r[idxProductType]).trim() : "";
-
-        function cellValue(key) {
-          var index = colIdx[key];
-          if (index == null || index < 0) return null;
-          return r[index];
-        }
-
-        var regNum = 0;
-        if (colIdx.registration != null && colIdx.registration >= 0) {
-          var regCell = r[colIdx.registration];
-          regNum = Number(regCell);
-          if (!Number.isFinite(regNum)) regNum = 0;
-        }
-
-        var d1Count = 0;
-        if (colIdx.d1Retained != null && colIdx.d1Retained >= 0) {
-          var c1 = r[colIdx.d1Retained];
-          d1Count = Number(c1);
-          if (!Number.isFinite(d1Count)) d1Count = 0;
-        }
-
-        var d7Count = 0;
-        if (colIdx.d7Retained != null && colIdx.d7Retained >= 0) {
-          var c7 = r[colIdx.d7Retained];
-          d7Count = Number(c7);
-          if (!Number.isFinite(d7Count)) d7Count = 0;
-        }
-
-        var retentionD1 = regNum > 0 ? d1Count / regNum : 0;
-        var retentionD7 = regNum > 0 ? d7Count / regNum : 0;
-
-        var lines = [];
-        lines.push("  {");
-        lines.push('    month: "' + monthKey + '",');
-        lines.push('    date: "' + dateStr + '",');
-        lines.push('    country: "' + country + '",');
-        lines.push("    regs: " + formatJsNumber(cellValue("registration")) + ",");
-        lines.push("    d0Payers: " + formatJsNumber(cellValue("d0Payers")) + ",");
-        lines.push("    d7Payers: " + formatJsNumber(cellValue("d7Payers")) + ",");
-        lines.push(
-          "    ggrSportsD0: " + formatJsNumber(cellValue("ggrSportsD0")) + ","
-        );
-        lines.push(
-          "    ggrSportsD7: " + formatJsNumber(cellValue("ggrSportsD7")) + ","
-        );
-        lines.push(
-          "    ggrGamesD0: " + formatJsNumber(cellValue("ggrGamesD0")) + ","
-        );
-        lines.push(
-          "    ggrGamesD7: " + formatJsNumber(cellValue("ggrGamesD7")) + ","
-        );
-        lines.push(
-          "    sportsPlayers: " +
-            formatJsNumber(cellValue("sportsPlayers")) +
-            ","
-        );
-        lines.push(
-          "    gamesPlayers: " +
-            formatJsNumber(cellValue("gamesPlayers")) +
-            ","
-        );
-        lines.push("    retentionD1: " + formatJsNumber(retentionD1) + ",");
-        lines.push("    retentionD7: " + formatJsNumber(retentionD7) + ",");
-        lines.push("    spend: " + formatJsNumber(cellValue("spent")) + ",");
-        lines.push(
-          '    media: "' + media.replace(/"/g, '\\"') + '",'
-        );
-        lines.push(
-          '    productType: "' + productType.replace(/"/g, '\\"') + '",'
-        );
-        lines.push("  }");
-
-        if (!monthMap[monthKey]) monthMap[monthKey] = [];
-        monthMap[monthKey].push(lines.join("\n"));
-      }
-
-      var monthKeys = Object.keys(monthMap).sort();
-      if (!monthKeys.length) {
-        return "// 没读到任何有效买量数据行";
-      }
-
-      var out = [];
-      monthKeys.forEach(function (mk, idx) {
-        out.push(
-          "// ===== " + mk + " 买量（粘贴到买量月度看板数据对象中） ====="
-        );
-        out.push('"' + mk + '": [');
-        out.push(monthMap[mk].join(",\n"));
-        out.push("]");
-        if (idx < monthKeys.length - 1) {
-          out.push("");
-          out.push("");
-        }
-      });
-
-      return out.join("\n");
-    }
-
-    function readWorkbookFromFile(file, onDone) {
-      var reader = new FileReader();
-      reader.onload = function (evt) {
-        try {
-          var data = evt.target.result;
-          var wb = XLSX.read(data, { type: "array" });
-          onDone(null, wb);
-        } catch (err) {
-          onDone(err || new Error("解析 Excel 出错"));
-        }
-      };
-      reader.onerror = function (err) {
-        onDone(err || new Error("读取文件失败"));
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function bindCopyButton(btnId, textareaId) {
-      var btn = document.getElementById(btnId);
-      var ta = document.getElementById(textareaId);
-      if (!btn || !ta) return;
-
-      btn.addEventListener("click", function () {
-        if (!ta.value) return;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(ta.value).catch(function () {});
-        } else {
-          ta.select();
-          document.execCommand("copy");
-        }
-      });
-    }
-
-    function bindGenerateButtons() {
-      var orgBtn = document.getElementById("gen-org");
-      var orgInput = document.getElementById("organic-file");
-      var orgOut = document.getElementById("organic-output");
-
-      if (orgBtn && orgInput && orgOut) {
-        orgBtn.addEventListener("click", function () {
-          orgOut.value = "";
-          if (!orgInput.files || !orgInput.files[0]) {
-            orgOut.value = "// 请先选择自然量 Excel 文件";
-            return;
-          }
-          readWorkbookFromFile(orgInput.files[0], function (err, wb) {
-            if (err) {
-              orgOut.value =
-                "// 解析自然量 Excel 出错：\n// " +
-                (err.message || String(err));
-              return;
-            }
-            orgOut.value = buildOrganicCode(wb);
-          });
-        });
-      }
-
-      var paidBtn = document.getElementById("gen-paid");
-      var paidInput = document.getElementById("paid-file");
-      var paidOut = document.getElementById("paid-output");
-
-      if (paidBtn && paidInput && paidOut) {
-        paidBtn.addEventListener("click", function () {
-          paidOut.value = "";
-          if (!paidInput.files || !paidInput.files[0]) {
-            paidOut.value = "// 请先选择买量 Excel 文件";
-            return;
-          }
-          readWorkbookFromFile(paidInput.files[0], function (err, wb) {
-            if (err) {
-              paidOut.value =
-                "// 解析买量 Excel 出错：\n// " +
-                (err.message || String(err));
-              return;
-            }
-            paidOut.value = buildPaidCode(wb);
-          });
-        });
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-      bindGenerateButtons();
-      bindCopyButton("copy-org", "organic-output");
-      bindCopyButton("copy-paid", "paid-output");
+    targetFields.forEach(field => {
+      col[field] = headers.indexOf(field);
     });
-  </script>
+
+    if (col.date === -1 || col.country === -1) {
+      return "// 错误：Excel 缺少 date 或 country 列，请检查表头是否为英文。";
+    }
+
+    rows.forEach(row => {
+      const dateVal = formatDate(row[col.date]);
+      if (!dateVal) return; // 跳过无效行
+
+      const monthKey = dateVal.slice(0, 7); // "2025-10"
+      if (!result[monthKey]) result[monthKey] = [];
+
+      // 构建 JS 对象字符串
+      let itemStr = `    {
+      date: "${dateVal}",
+      country: "${String(row[col.country]).trim().toUpperCase()}",`;
+      
+      // 动态添加所有数值字段
+      targetFields.forEach(field => {
+        if (field === 'date' || field === 'country') return;
+        const val = col[field] > -1 ? formatNum(row[col[field]]) : 0;
+        itemStr += `\n      ${field}: ${val},`;
+      });
+
+      itemStr += `\n    }`;
+      result[monthKey].push(itemStr);
+    });
+
+    // 拼接最终输出
+    let finalCode = "";
+    Object.keys(result).sort().forEach(m => {
+      finalCode += `// ${m} 数据\n"${m}": [\n${result[m].join(',\n')}\n],\n\n`;
+    });
+    return finalCode || "// 未提取到有效数据";
+  }
+
+  // 2. 买量转换 (逻辑类似，但字段略有不同)
+  function processPaid(data) {
+    if (!data || data.length < 2) return "// Excel 无数据";
+    
+    const headers = data[0];
+    const rows = data.slice(1);
+    const result = {};
+
+    const col = {};
+    // 买量特有字段 + 通用字段
+    const targetFields = [
+      "date", "country", "media", "Product_type", "spent", // 基础信息
+      "registration",
+      "D0_unique_purchase", "D0_PURCHASE_VALUE",
+      "D0_TOTAL_BET_PLACED_USER", "D0_SPORTS_BET_PLACED_USER", "D0_GAMES_BET_PLACED_USER",
+      "D0_SPORTS_BET_FLOW", "D0_GAMES_BET_FLOW", "D0_TOTAL_BET_FLOW",
+      "D7_unique_purchase", "D7_PURCHASE_VALUE",
+      "D7_TOTAL_BET_PLACED_USER", "D7_SPORTS_BET_PLACED_USER", "D7_GAMES_BET_PLACED_USER",
+      "D7_SPORTS_BET_FLOW", "D7_GAMES_BET_FLOW", "D7_TOTAL_BET_FLOW",
+      "D1_retained_users", "D7_retained_users"
+    ];
+
+    targetFields.forEach(field => {
+      col[field] = headers.indexOf(field);
+    });
+
+    if (col.date === -1) return "// 错误：缺少 date 列";
+
+    rows.forEach(row => {
+      const dateVal = formatDate(row[col.date]);
+      if (!dateVal) return;
+
+      const monthKey = dateVal.slice(0, 7);
+      if (!result[monthKey]) result[monthKey] = [];
+
+      // 特殊处理字符串字段
+      const media = col.media > -1 ? String(row[col.media]).trim() : "";
+      const pType = col.Product_type > -1 ? String(row[col.Product_type]).trim() : "";
+      const country = col.country > -1 ? String(row[col.country]).trim().toUpperCase() : "";
+
+      let itemStr = `    {
+      date: "${dateVal}",
+      country: "${country}",
+      media: "${media}",
+      productType: "${pType}",`; // 修正：Excel头是Product_type，JS里叫productType
+      
+      // 处理数值字段 (注意 spent -> spend 映射)
+      targetFields.forEach(field => {
+        if (["date", "country", "media", "Product_type"].includes(field)) return;
+        
+        let jsKey = field;
+        if (field === "spent") jsKey = "spend"; // 映射 spent -> spend
+
+        const val = col[field] > -1 ? formatNum(row[col[field]]) : 0;
+        itemStr += `\n      ${jsKey}: ${val},`;
+      });
+
+      itemStr += `\n    }`;
+      result[monthKey].push(itemStr);
+    });
+
+    let finalCode = "";
+    Object.keys(result).sort().forEach(m => {
+      finalCode += `// ${m} 买量数据\n"${m}": [\n${result[m].join(',\n')}\n],\n\n`;
+    });
+    return finalCode || "// 未提取到有效数据";
+  }
+
+  // ================= 事件绑定 =================
+  function handleFile(fileInputId, outputId, processor) {
+    const input = document.getElementById(fileInputId);
+    const output = document.getElementById(outputId);
+    if (!input.files.length) {
+      alert("请先选择 Excel 文件");
+      return;
+    }
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type: 'array'});
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet, {header: 1}); // 获取二维数组
+      output.value = processor(json);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  document.getElementById('gen-org').onclick = () => handleFile('file-org', 'out-org', processOrganic);
+  document.getElementById('gen-paid').onclick = () => handleFile('file-paid', 'out-paid', processPaid);
+
+  // 复制按钮
+  function copyToClipboard(id) {
+    const el = document.getElementById(id);
+    el.select();
+    document.execCommand('copy');
+    const originalText = el.previousElementSibling.innerText; 
+    // 简单的反馈动画
+    const btn = id === 'out-org' ? document.getElementById('copy-org') : document.getElementById('copy-paid');
+    const originBtnText = btn.innerText;
+    btn.innerText = '✅ 已复制';
+    setTimeout(() => btn.innerText = originBtnText, 1500);
+  }
+
+  document.getElementById('copy-org').onclick = () => copyToClipboard('out-org');
+  document.getElementById('copy-paid').onclick = () => copyToClipboard('out-paid');
+
+})();
+</script>
+
 </body>
 </html>
