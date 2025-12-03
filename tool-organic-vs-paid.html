@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.2 智能容错版)</title>
+  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.3 无括号版)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
@@ -85,15 +85,15 @@
 
 <div class="container">
   <header class="header">
-    <h1>BangBet 数据转换工具 v4.2</h1>
-    <p>Excel 源数据 (English Header) → 扁平数组 (Flat Array)</p>
+    <h1>BangBet 数据转换工具 v4.3</h1>
+    <p>Excel 源数据 (English Header) → 纯对象列表 (No Brackets)</p>
   </header>
 
   <section class="card">
     <div class="card-header">
       <div class="card-title">
         <span>🌿 自然量 (Organic)</span>
-        <span class="tag">Format: [ {...}, {...} ]</span>
+        <span class="tag">Format: {...}, {...}</span>
       </div>
       <button class="btn-copy" id="copy-org">复制自然量代码</button>
     </div>
@@ -105,10 +105,10 @@
     
     <textarea id="out-org" placeholder="// 步骤 1：上传【自然量数据.xlsx】
 // 步骤 2：点击「生成自然量 JS」
-// 步骤 3：直接复制结果到 data.js"></textarea>
+// 步骤 3：直接复制，追加粘贴到 data.js 数组末尾"></textarea>
 
     <div class="tips">
-      <strong>更新：</strong> 只要表头包含 date / country 即可识别（不区分大小写）。
+      <strong>更新：</strong> 输出已去除外层 <code>[]</code>，仅生成以逗号分隔的对象列表，方便直接追加到现有数组中。
     </div>
   </section>
 
@@ -116,7 +116,7 @@
     <div class="card-header">
       <div class="card-title">
         <span>💰 买量 (Paid)</span>
-        <span class="tag">Format: [ {...}, {...} ]</span>
+        <span class="tag">Format: {...}, {...}</span>
       </div>
       <button class="btn-copy" id="copy-paid">复制买量代码</button>
     </div>
@@ -128,7 +128,7 @@
     
     <textarea id="out-paid" placeholder="// 步骤 1：上传【买量数据.xlsx】
 // 步骤 2：点击「生成买量 JS」
-// 步骤 3：直接复制结果到 data.js"></textarea>
+// 步骤 3：直接复制，追加粘贴到 data.js 数组末尾"></textarea>
   </section>
 </div>
 
@@ -144,20 +144,15 @@
 
   function formatDate(val) {
     if (!val) return null;
-    // 处理 Excel 序列号日期
     if (typeof val === 'number') {
       const date = XLSX.SSF.parse_date_code(val);
       if (date) {
         return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
       }
     }
-    // 处理字符串日期
-    const str = String(val).trim();
-    // 尝试匹配常见的日期格式，简单起见直接返回，由后续逻辑判断有效性
-    return str; 
+    return String(val).trim(); 
   }
 
-  // 智能查找列索引 (忽略大小写和空格)
   function findColIndex(headers, key) {
     if (!headers || !key) return -1;
     const search = key.toLowerCase().trim();
@@ -168,14 +163,12 @@
   
   // 1. 自然量转换
   function processOrganic(data) {
-    if (!data || data.length < 2) return "// Excel 解析成功，但没有数据行";
+    if (!data || data.length < 2) return "// Excel 无数据";
     
     const headers = data[0];
     const rows = data.slice(1);
     const result = [];
 
-    // 关键字段映射（左侧是代码里的 key，右侧是 Excel 可能的表头 key）
-    // 这里我们假设 Excel 表头和代码 key 是一致的，但为了保险，我们在查找时会归一化
     const targetFields = [
       "date", "country", "registration",
       "D0_unique_purchase", "D0_PURCHASE_VALUE",
@@ -187,24 +180,19 @@
       "D1_retained_users", "D7_retained_users"
     ];
 
-    // 构建索引映射
     const colMap = {};
-    targetFields.forEach(f => {
-      colMap[f] = findColIndex(headers, f);
-    });
+    targetFields.forEach(f => colMap[f] = findColIndex(headers, f));
 
-    // 检查必须字段
     if (colMap.date === -1 || colMap.country === -1) {
-      return `// ❌ 生成失败：未找到 'date' 或 'country' 列。\n// 读取到的 Excel 表头如下，请检查拼写：\n// ${headers.join(', ')}`;
+      return `// ❌ 错误：未找到 date 或 country 列。\n// 读取到的表头：${headers.join(', ')}`;
     }
 
     rows.forEach(row => {
       const dateVal = formatDate(row[colMap.date]);
-      if (!dateVal || !dateVal.match(/^\d{4}-\d{2}-\d{2}/)) return; // 跳过无效日期行
+      if (!dateVal || !dateVal.match(/^\d{4}-\d{2}-\d{2}/)) return;
 
       const monthKey = dateVal.slice(0, 7);
-      const countryRaw = row[colMap.country];
-      const country = countryRaw ? String(countryRaw).trim().toUpperCase() : "";
+      const country = row[colMap.country] ? String(row[colMap.country]).trim().toUpperCase() : "";
 
       let itemStr = `  {
     month: "${monthKey}",
@@ -213,9 +201,7 @@
       
       targetFields.forEach(field => {
         if (field === 'date' || field === 'country') return;
-        const idx = colMap[field];
-        // 如果列存在，取值；不存在则给 0
-        const val = idx > -1 ? formatNum(row[idx]) : 0;
+        const val = colMap[field] > -1 ? formatNum(row[colMap[field]]) : 0;
         itemStr += `\n    ${field}: ${val},`;
       });
 
@@ -224,13 +210,15 @@
     });
 
     result.sort((a, b) => a.date.localeCompare(b.date));
-    if (result.length === 0) return "// 未提取到有效数据，请检查 Excel 日期格式是否为 YYYY-MM-DD";
-    return `[\n${result.map(i => i.str).join(',\n')}\n]`;
+    if (result.length === 0) return "// 未提取到有效数据，请检查 Excel 日期格式";
+    
+    // 【改动点】只返回 join 后的字符串，不加 []
+    return result.map(i => i.str).join(',\n') + ','; // 末尾加个逗号方便后续粘贴
   }
 
   // 2. 买量转换
   function processPaid(data) {
-    if (!data || data.length < 2) return "// Excel 解析成功，但没有数据行";
+    if (!data || data.length < 2) return "// Excel 无数据";
     
     const headers = data[0];
     const rows = data.slice(1);
@@ -249,13 +237,9 @@
     ];
 
     const colMap = {};
-    targetFields.forEach(f => {
-      colMap[f] = findColIndex(headers, f);
-    });
+    targetFields.forEach(f => colMap[f] = findColIndex(headers, f));
 
-    if (colMap.date === -1) {
-       return `// ❌ 生成失败：未找到 'date' 列。\n// 读取到的 Excel 表头如下：\n// ${headers.join(', ')}`;
-    }
+    if (colMap.date === -1) return `// ❌ 错误：未找到 date 列`;
 
     rows.forEach(row => {
       const dateVal = formatDate(row[colMap.date]);
@@ -276,10 +260,9 @@
       targetFields.forEach(field => {
         if (["date", "country", "media", "Product_type"].includes(field)) return;
         let jsKey = field;
-        if (field === "spent") jsKey = "spend"; // 映射 spent -> spend
+        if (field === "spent") jsKey = "spend"; 
 
-        const idx = colMap[field];
-        const val = idx > -1 ? formatNum(row[idx]) : 0;
+        const val = colMap[field] > -1 ? formatNum(row[colMap[field]]) : 0;
         itemStr += `\n    ${jsKey}: ${val},`;
       });
 
@@ -289,7 +272,9 @@
 
     result.sort((a, b) => a.date.localeCompare(b.date));
     if (result.length === 0) return "// 未提取到有效数据";
-    return `[\n${result.map(i => i.str).join(',\n')}\n]`;
+    
+    // 【改动点】只返回 join 后的字符串，不加 []
+    return result.map(i => i.str).join(',\n') + ','; // 末尾加个逗号
   }
 
   // ================= 事件绑定 =================
@@ -308,7 +293,6 @@
         const workbook = XLSX.read(data, {type: 'array'});
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        // header: 1 保证得到二维数组，而不是对象数组，方便我们自己处理表头
         const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
         output.value = processor(json);
       } catch (err) {
