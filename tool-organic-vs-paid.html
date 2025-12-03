@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.1 扁平版)</title>
+  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.2 智能容错版)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
@@ -24,32 +24,23 @@
     }
     .container { max-width: 1000px; margin: 0 auto; }
     
-    /* 顶部区域 */
-    .header {
-      margin-bottom: 24px;
-      text-align: center;
-    }
+    .header { margin-bottom: 24px; text-align: center; }
     .header h1 {
       font-size: 24px; font-weight: 700; margin: 0 0 8px 0;
       background: linear-gradient(135deg, #2563eb, #16a34a);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .header p { font-size: 13px; color: var(--text-sub); margin: 0; }
 
-    /* 卡片通用样式 */
     .card {
-      background: var(--card);
-      border-radius: var(--radius);
+      background: var(--card); border-radius: var(--radius);
       border: 1px solid var(--border);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 20px; margin-bottom: 20px;
     }
     .card-header {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px; padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
     }
     .card-title { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px; }
     .tag { 
@@ -57,31 +48,23 @@
       background: #eff6ff; color: #2563eb; font-weight: 500;
     }
     
-    /* 文件上传区 */
     .control-row {
-      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-      margin-bottom: 12px;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;
     }
     input[type="file"] {
       font-size: 12px; padding: 8px;
-      border: 1px dashed var(--border);
-      border-radius: 6px;
-      background: #f8fafc;
-      flex: 1;
-      min-width: 200px;
+      border: 1px dashed var(--border); border-radius: 6px;
+      background: #f8fafc; flex: 1; min-width: 200px;
     }
     button {
-      padding: 8px 16px;
-      border-radius: 6px; border: none;
-      font-size: 12px; font-weight: 600; cursor: pointer;
-      transition: all 0.2s;
+      padding: 8px 16px; border-radius: 6px; border: none;
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
     }
     .btn-gen { background: var(--accent); color: white; }
     .btn-gen:hover { background: var(--accent-hover); }
     .btn-copy { background: #f1f5f9; color: var(--text-main); }
     .btn-copy:hover { background: #e2e8f0; }
 
-    /* 文本域 */
     textarea {
       width: 100%; height: 220px;
       border: 1px solid var(--border); border-radius: 8px;
@@ -91,7 +74,6 @@
     }
     textarea:focus { border-color: var(--accent); background: #fff; }
 
-    /* 提示信息 */
     .tips {
       font-size: 11px; color: #94a3b8; margin-top: 8px; line-height: 1.6;
       background: #f8fafc; padding: 8px 12px; border-radius: 6px;
@@ -103,7 +85,7 @@
 
 <div class="container">
   <header class="header">
-    <h1>BangBet 数据转换工具 v4.1</h1>
+    <h1>BangBet 数据转换工具 v4.2</h1>
     <p>Excel 源数据 (English Header) → 扁平数组 (Flat Array)</p>
   </header>
 
@@ -123,10 +105,10 @@
     
     <textarea id="out-org" placeholder="// 步骤 1：上传【自然量数据.xlsx】
 // 步骤 2：点击「生成自然量 JS」
-// 步骤 3：结果是一个扁平数组，可直接赋值给 const RAW_ORGANIC = ..."></textarea>
+// 步骤 3：直接复制结果到 data.js"></textarea>
 
     <div class="tips">
-      <strong>说明：</strong> 输出不再包含 <code>"YYYY-MM": [...]</code> 的外层 Key，直接生成所有数据的扁平数组。字段名保持 Excel 原名（如 <code>D0_SPORTS_BET_FLOW</code>）。
+      <strong>更新：</strong> 只要表头包含 date / country 即可识别（不区分大小写）。
     </div>
   </section>
 
@@ -146,11 +128,7 @@
     
     <textarea id="out-paid" placeholder="// 步骤 1：上传【买量数据.xlsx】
 // 步骤 2：点击「生成买量 JS」
-// 步骤 3：结果是一个扁平数组，可直接赋值给 const RAW_PAID = ..."></textarea>
-
-    <div class="tips">
-      <strong>说明：</strong> 自动映射 <code>spent</code> → <code>spend</code>，<code>Product_type</code> → <code>productType</code>。输出为扁平数组。
-    </div>
+// 步骤 3：直接复制结果到 data.js"></textarea>
   </section>
 </div>
 
@@ -173,24 +151,31 @@
         return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
       }
     }
-    // 处理字符串日期 (YYYY-MM-DD)
+    // 处理字符串日期
     const str = String(val).trim();
-    if (str.match(/^\d{4}-\d{2}-\d{2}$/)) return str;
+    // 尝试匹配常见的日期格式，简单起见直接返回，由后续逻辑判断有效性
     return str; 
+  }
+
+  // 智能查找列索引 (忽略大小写和空格)
+  function findColIndex(headers, key) {
+    if (!headers || !key) return -1;
+    const search = key.toLowerCase().trim();
+    return headers.findIndex(h => String(h).toLowerCase().trim() === search);
   }
 
   // ================= 核心转换逻辑 =================
   
   // 1. 自然量转换
   function processOrganic(data) {
-    if (!data || data.length < 2) return "// Excel 无数据";
+    if (!data || data.length < 2) return "// Excel 解析成功，但没有数据行";
     
-    const headers = data[0]; // 第一行是表头
+    const headers = data[0];
     const rows = data.slice(1);
-    const result = []; // 【改动点】这里改成了数组，而不是对象
+    const result = [];
 
-    // 查找关键列的索引
-    const col = {};
+    // 关键字段映射（左侧是代码里的 key，右侧是 Excel 可能的表头 key）
+    // 这里我们假设 Excel 表头和代码 key 是一致的，但为了保险，我们在查找时会归一化
     const targetFields = [
       "date", "country", "registration",
       "D0_unique_purchase", "D0_PURCHASE_VALUE",
@@ -202,58 +187,57 @@
       "D1_retained_users", "D7_retained_users"
     ];
 
-    targetFields.forEach(field => {
-      col[field] = headers.indexOf(field);
+    // 构建索引映射
+    const colMap = {};
+    targetFields.forEach(f => {
+      colMap[f] = findColIndex(headers, f);
     });
 
-    if (col.date === -1 || col.country === -1) {
-      return "// 错误：Excel 缺少 date 或 country 列，请检查表头是否为英文。";
+    // 检查必须字段
+    if (colMap.date === -1 || colMap.country === -1) {
+      return `// ❌ 生成失败：未找到 'date' 或 'country' 列。\n// 读取到的 Excel 表头如下，请检查拼写：\n// ${headers.join(', ')}`;
     }
 
     rows.forEach(row => {
-      const dateVal = formatDate(row[col.date]);
-      if (!dateVal) return; // 跳过无效行
+      const dateVal = formatDate(row[colMap.date]);
+      if (!dateVal || !dateVal.match(/^\d{4}-\d{2}-\d{2}/)) return; // 跳过无效日期行
 
-      const monthKey = dateVal.slice(0, 7); // "2025-10" (保留月份字段，方便后续筛选)
+      const monthKey = dateVal.slice(0, 7);
+      const countryRaw = row[colMap.country];
+      const country = countryRaw ? String(countryRaw).trim().toUpperCase() : "";
 
-      // 构建 JS 对象字符串
       let itemStr = `  {
     month: "${monthKey}",
     date: "${dateVal}",
-    country: "${String(row[col.country]).trim().toUpperCase()}",`;
+    country: "${country}",`;
       
-      // 动态添加所有数值字段
       targetFields.forEach(field => {
         if (field === 'date' || field === 'country') return;
-        const val = col[field] > -1 ? formatNum(row[col[field]]) : 0;
+        const idx = colMap[field];
+        // 如果列存在，取值；不存在则给 0
+        const val = idx > -1 ? formatNum(row[idx]) : 0;
         itemStr += `\n    ${field}: ${val},`;
       });
 
       itemStr += `\n  }`;
-      
-      // 【改动点】直接将每个对象放入数组，并存储日期用于排序
       result.push({ date: dateVal, str: itemStr });
     });
 
-    // 【改动点】按日期排序，保证输出整齐
     result.sort((a, b) => a.date.localeCompare(b.date));
-
-    // 拼接最终输出：直接是一个大数组
-    if (result.length === 0) return "// 未提取到有效数据";
+    if (result.length === 0) return "// 未提取到有效数据，请检查 Excel 日期格式是否为 YYYY-MM-DD";
     return `[\n${result.map(i => i.str).join(',\n')}\n]`;
   }
 
   // 2. 买量转换
   function processPaid(data) {
-    if (!data || data.length < 2) return "// Excel 无数据";
+    if (!data || data.length < 2) return "// Excel 解析成功，但没有数据行";
     
     const headers = data[0];
     const rows = data.slice(1);
-    const result = []; // 【改动点】数组结构
+    const result = [];
 
-    const col = {};
     const targetFields = [
-      "date", "country", "media", "Product_type", "spent", // 基础信息
+      "date", "country", "media", "Product_type", "spent",
       "registration",
       "D0_unique_purchase", "D0_PURCHASE_VALUE",
       "D0_TOTAL_BET_PLACED_USER", "D0_SPORTS_BET_PLACED_USER", "D0_GAMES_BET_PLACED_USER",
@@ -264,50 +248,46 @@
       "D1_retained_users", "D7_retained_users"
     ];
 
-    targetFields.forEach(field => {
-      col[field] = headers.indexOf(field);
+    const colMap = {};
+    targetFields.forEach(f => {
+      colMap[f] = findColIndex(headers, f);
     });
 
-    if (col.date === -1) return "// 错误：缺少 date 列";
+    if (colMap.date === -1) {
+       return `// ❌ 生成失败：未找到 'date' 列。\n// 读取到的 Excel 表头如下：\n// ${headers.join(', ')}`;
+    }
 
     rows.forEach(row => {
-      const dateVal = formatDate(row[col.date]);
-      if (!dateVal) return;
+      const dateVal = formatDate(row[colMap.date]);
+      if (!dateVal || !dateVal.match(/^\d{4}-\d{2}-\d{2}/)) return;
 
       const monthKey = dateVal.slice(0, 7);
-
-      // 特殊处理字符串字段
-      const media = col.media > -1 ? String(row[col.media]).trim() : "";
-      const pType = col.Product_type > -1 ? String(row[col.Product_type]).trim() : "";
-      const country = col.country > -1 ? String(row[col.country]).trim().toUpperCase() : "";
+      const country = colMap.country > -1 ? String(row[colMap.country]).trim().toUpperCase() : "";
+      const media = colMap.media > -1 ? String(row[colMap.media]).trim() : "";
+      const pType = colMap.Product_type > -1 ? String(row[colMap.Product_type]).trim() : "";
 
       let itemStr = `  {
     month: "${monthKey}",
     date: "${dateVal}",
     country: "${country}",
     media: "${media}",
-    productType: "${pType}",`; 
+    productType: "${pType}",`;
       
-      // 处理数值字段
       targetFields.forEach(field => {
         if (["date", "country", "media", "Product_type"].includes(field)) return;
-        
         let jsKey = field;
         if (field === "spent") jsKey = "spend"; // 映射 spent -> spend
 
-        const val = col[field] > -1 ? formatNum(row[col[field]]) : 0;
+        const idx = colMap[field];
+        const val = idx > -1 ? formatNum(row[idx]) : 0;
         itemStr += `\n    ${jsKey}: ${val},`;
       });
 
       itemStr += `\n  }`;
-      
-      // 【改动点】存入数组
       result.push({ date: dateVal, str: itemStr });
     });
 
-    // 【改动点】排序
     result.sort((a, b) => a.date.localeCompare(b.date));
-
     if (result.length === 0) return "// 未提取到有效数据";
     return `[\n${result.map(i => i.str).join(',\n')}\n]`;
   }
@@ -323,12 +303,17 @@
     const file = input.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, {type: 'array'});
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json(worksheet, {header: 1}); // 获取二维数组
-      output.value = processor(json);
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        // header: 1 保证得到二维数组，而不是对象数组，方便我们自己处理表头
+        const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+        output.value = processor(json);
+      } catch (err) {
+        output.value = "// ❌ 解析出错：" + err.message;
+      }
     };
     reader.readAsArrayBuffer(file);
   }
@@ -336,5 +321,21 @@
   document.getElementById('gen-org').onclick = () => handleFile('file-org', 'out-org', processOrganic);
   document.getElementById('gen-paid').onclick = () => handleFile('file-paid', 'out-paid', processPaid);
 
-  // 复制按钮
   function copyToClipboard(id) {
+    const el = document.getElementById(id);
+    el.select();
+    document.execCommand('copy');
+    const btn = id === 'out-org' ? document.getElementById('copy-org') : document.getElementById('copy-paid');
+    const originBtnText = btn.innerText;
+    btn.innerText = '✅ 已复制';
+    setTimeout(() => btn.innerText = originBtnText, 1500);
+  }
+
+  document.getElementById('copy-org').onclick = () => copyToClipboard('out-org');
+  document.getElementById('copy-paid').onclick = () => copyToClipboard('out-paid');
+
+})();
+</script>
+
+</body>
+</html>
