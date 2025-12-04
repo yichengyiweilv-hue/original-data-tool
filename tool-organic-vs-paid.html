@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>自然量 & 买量 Excel → JS 数据转换工具 (v4.3 无括号版)</title>
+  <title>BangBet 数据转换工具 (v4.4 Month Key版)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root {
@@ -85,15 +85,15 @@
 
 <div class="container">
   <header class="header">
-    <h1>BangBet 数据转换工具 v4.3</h1>
-    <p>Excel 源数据 (English Header) → 纯对象列表 (No Brackets)</p>
+    <h1>BangBet 数据转换工具 v4.4</h1>
+    <p>Excel 源数据 → "YYYY-MM": [ Objects ] 格式</p>
   </header>
 
   <section class="card">
     <div class="card-header">
       <div class="card-title">
         <span>🌿 自然量 (Organic)</span>
-        <span class="tag">Format: {...}, {...}</span>
+        <span class="tag">Result: "2025-10": [ ... ]</span>
       </div>
       <button class="btn-copy" id="copy-org">复制自然量代码</button>
     </div>
@@ -103,12 +103,12 @@
       <button class="btn-gen" id="gen-org">生成自然量 JS</button>
     </div>
     
-    <textarea id="out-org" placeholder="// 步骤 1：上传【自然量数据.xlsx】
-// 步骤 2：点击「生成自然量 JS」
-// 步骤 3：直接复制，追加粘贴到 data.js 数组末尾"></textarea>
+    <textarea id="out-org" placeholder="// 1. 上传【10月自然量数据.xlsx】
+// 2. 生成后直接复制
+// 3. 粘贴到 window.RAW_ORGANIC_BY_MONTH 的对象内部"></textarea>
 
     <div class="tips">
-      <strong>更新：</strong> 输出已去除外层 <code>[]</code>，仅生成以逗号分隔的对象列表，方便直接追加到现有数组中。
+      <strong>更新 v4.4：</strong> 自动按月份分组，输出格式为 <code>"2025-10": [ ... ]</code>，修正字段映射。
     </div>
   </section>
 
@@ -116,7 +116,7 @@
     <div class="card-header">
       <div class="card-title">
         <span>💰 买量 (Paid)</span>
-        <span class="tag">Format: {...}, {...}</span>
+        <span class="tag">Result: "2025-10": [ ... ]</span>
       </div>
       <button class="btn-copy" id="copy-paid">复制买量代码</button>
     </div>
@@ -126,9 +126,9 @@
       <button class="btn-gen" id="gen-paid">生成买量 JS</button>
     </div>
     
-    <textarea id="out-paid" placeholder="// 步骤 1：上传【买量数据.xlsx】
-// 步骤 2：点击「生成买量 JS」
-// 步骤 3：直接复制，追加粘贴到 data.js 数组末尾"></textarea>
+    <textarea id="out-paid" placeholder="// 1. 上传【10月买量数据_final.xlsx】
+// 2. 生成后直接复制
+// 3. 粘贴到 window.RAW_PAID_BY_MONTH 的对象内部"></textarea>
   </section>
 </div>
 
@@ -159,6 +159,36 @@
     return headers.findIndex(h => String(h).toLowerCase().trim() === search);
   }
 
+  // 辅助函数：按月份分组并生成最终字符串
+  function groupByMonthAndGenerate(items) {
+    // 1. 按月份分组
+    const groups = {};
+    items.forEach(item => {
+        if (!groups[item.month]) {
+            groups[item.month] = [];
+        }
+        groups[item.month].push(item);
+    });
+
+    // 2. 对每个月份内的数据按日期排序
+    Object.keys(groups).forEach(m => {
+        groups[m].sort((a, b) => a.date.localeCompare(b.date));
+    });
+
+    // 3. 生成字符串
+    const outputParts = [];
+    const months = Object.keys(groups).sort().reverse(); // 最近的月份在前，或者根据需要排序
+
+    months.forEach(month => {
+        const rows = groups[month].map(item => item.str).join(',\n');
+        // 核心格式改动：输出为 "YYYY-MM": [ ... ]
+        const block = `  "${month}": [\n${rows}\n  ]`;
+        outputParts.push(block);
+    });
+
+    return outputParts.join(',\n\n');
+  }
+
   // ================= 核心转换逻辑 =================
   
   // 1. 自然量转换
@@ -167,7 +197,7 @@
     
     const headers = data[0];
     const rows = data.slice(1);
-    const result = [];
+    const parsedItems = [];
 
     const targetFields = [
       "date", "country", "registration",
@@ -194,26 +224,24 @@
       const monthKey = dateVal.slice(0, 7);
       const country = row[colMap.country] ? String(row[colMap.country]).trim().toUpperCase() : "";
 
-      let itemStr = `  {
-    month: "${monthKey}",
-    date: "${dateVal}",
-    country: "${country}",`;
+      // v4.4: 内部不包含 month 字段
+      let itemStr = `    {
+      date: "${dateVal}",
+      country: "${country}",`;
       
       targetFields.forEach(field => {
         if (field === 'date' || field === 'country') return;
         const val = colMap[field] > -1 ? formatNum(row[colMap[field]]) : 0;
-        itemStr += `\n    ${field}: ${val},`;
+        itemStr += `\n      ${field}: ${val},`;
       });
 
-      itemStr += `\n  }`;
-      result.push({ date: dateVal, str: itemStr });
+      itemStr += `\n    }`;
+      parsedItems.push({ month: monthKey, date: dateVal, str: itemStr });
     });
 
-    result.sort((a, b) => a.date.localeCompare(b.date));
-    if (result.length === 0) return "// 未提取到有效数据，请检查 Excel 日期格式";
+    if (parsedItems.length === 0) return "// 未提取到有效数据，请检查 Excel 日期格式";
     
-    // 【改动点】只返回 join 后的字符串，不加 []
-    return result.map(i => i.str).join(',\n') + ','; // 末尾加个逗号方便后续粘贴
+    return groupByMonthAndGenerate(parsedItems);
   }
 
   // 2. 买量转换
@@ -222,7 +250,7 @@
     
     const headers = data[0];
     const rows = data.slice(1);
-    const result = [];
+    const parsedItems = [];
 
     const targetFields = [
       "date", "country", "media", "Product_type", "spent",
@@ -250,31 +278,31 @@
       const media = colMap.media > -1 ? String(row[colMap.media]).trim() : "";
       const pType = colMap.Product_type > -1 ? String(row[colMap.Product_type]).trim() : "";
 
-      let itemStr = `  {
-    month: "${monthKey}",
-    date: "${dateVal}",
-    country: "${country}",
-    media: "${media}",
-    productType: "${pType}",`;
+      // v4.4: 内部不包含 month 字段
+      let itemStr = `    {
+      date: "${dateVal}",
+      country: "${country}",
+      media: "${media}",
+      productType: "${pType}",`;
       
       targetFields.forEach(field => {
         if (["date", "country", "media", "Product_type"].includes(field)) return;
         let jsKey = field;
-        if (field === "spent") jsKey = "spend"; 
+        
+        // v4.4: 修正！保持 spent 为 spent，不要重命名为 spend
+        // if (field === "spent") jsKey = "spend"; 
 
         const val = colMap[field] > -1 ? formatNum(row[colMap[field]]) : 0;
-        itemStr += `\n    ${jsKey}: ${val},`;
+        itemStr += `\n      ${jsKey}: ${val},`;
       });
 
-      itemStr += `\n  }`;
-      result.push({ date: dateVal, str: itemStr });
+      itemStr += `\n    }`;
+      parsedItems.push({ month: monthKey, date: dateVal, str: itemStr });
     });
 
-    result.sort((a, b) => a.date.localeCompare(b.date));
-    if (result.length === 0) return "// 未提取到有效数据";
+    if (parsedItems.length === 0) return "// 未提取到有效数据";
     
-    // 【改动点】只返回 join 后的字符串，不加 []
-    return result.map(i => i.str).join(',\n') + ','; // 末尾加个逗号
+    return groupByMonthAndGenerate(parsedItems);
   }
 
   // ================= 事件绑定 =================
