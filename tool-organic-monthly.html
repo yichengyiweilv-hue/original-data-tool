@@ -1,553 +1,219 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>自然量 Excel → RAW_ORGANIC_BY_MONTH</title>
-  <style>
-    :root{
-      --border:#d0d7de;
-      --text:#111;
-      --muted:#555;
-      --bg:#fff;
-      --radius:10px;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
-    }
-    .wrap{
-      max-width:1100px;
-      margin:32px auto;
-      padding:0 20px;
-    }
-    h1{
-      font-size:18px;
-      font-weight:600;
-      margin:0 0 6px;
-    }
-    .sub{
-      color:var(--muted);
-      margin:0 0 18px;
-      font-size:13px;
-    }
-    .panel{
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:16px;
-      background:var(--bg);
-    }
-    .row{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    input[type=file]{
-      padding:10px;
-      border:1px dashed var(--border);
-      border-radius:var(--radius);
-      background:var(--bg);
-      min-width:280px;
-    }
-    button{
-      padding:10px 14px;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:var(--bg);
-      cursor:pointer;
-    }
-    button:disabled{
-      opacity:.5;
-      cursor:not-allowed;
-    }
-    .opts{
-      display:flex;
-      gap:14px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-top:10px;
-      color:var(--muted);
-      font-size:12px;
-    }
-    .opts label{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      user-select:none;
-    }
-    .opts input[type=number]{
-      width:70px;
-      padding:6px 8px;
-      border:1px solid var(--border);
-      border-radius:8px;
-      background:var(--bg);
-      color:var(--text);
-    }
-    .meta{
-      margin-top:12px;
-      color:var(--muted);
-      font-size:12px;
-      white-space:pre-wrap;
-    }
-    textarea{
-      width:100%;
-      min-height:460px;
-      margin-top:14px;
-      padding:14px;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      font-size:12px;
-      line-height:1.45;
-      background:var(--bg);
-      color:var(--text);
-      resize:vertical;
-    }
-    .toast{
-      position:fixed;
-      right:16px;
-      top:16px;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:var(--bg);
-      box-shadow:0 6px 18px rgba(0,0,0,.08);
-      opacity:0;
-      transform:translateY(-6px);
-      transition:opacity .16s ease, transform .16s ease;
-      pointer-events:none;
-      font-size:13px;
-      max-width:min(520px, calc(100vw - 32px));
-      white-space:pre-wrap;
-    }
-    .toast.show{ opacity:1; transform:translateY(0); }
-    .hr{
-      height:1px;
-      background:var(--border);
-      margin:16px 0;
-    }
-    .small{
-      font-size:12px;
-      color:var(--muted);
-    }
-    .kbd{
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      font-size:12px;
-      padding:2px 6px;
-      border:1px solid var(--border);
-      border-radius:6px;
-      background:var(--bg);
-      color:var(--text);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自然量数据代码生成工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  body {
+    background-color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    padding: 30px;
+    color: #333;
+  }
+  h1 { font-size: 24px; margin-bottom: 20px; }
+  .controls {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  input[type="file"] {
+    font-size: 16px;
+  }
+  button {
+    padding: 10px 24px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  button:hover { background-color: #0056b3; }
+  button:active { background-color: #004494; }
+  
+  /* 代码框样式 */
+  #output-container {
+    position: relative;
+  }
+  #output {
+    width: 100%;
+    height: 600px;
+    font-family: "Menlo", "Monaco", "Consolas", "Courier New", monospace;
+    font-size: 14px;
+    background-color: white;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    padding: 15px;
+    box-sizing: border-box;
+    white-space: pre;
+    overflow: auto;
+    resize: vertical;
+    outline: none;
+  }
+  
+  #msg {
+    color: #28a745;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>自然量 Excel → RAW_ORGANIC_BY_MONTH 片段</h1>
-    <p class="sub">本页纯前端处理，不上传服务器；日期按 Excel 序列号解析，规避时区偏移（不会把 11/01 变成 10/31）。</p>
 
-    <div class="panel">
-      <div class="row">
-        <input id="excelInput" type="file" accept=".xlsx,.xls" />
-        <button id="btnGen" disabled>生成代码</button>
-        <button id="btnCopy" disabled>一键复制</button>
-        <button id="btnDownload" disabled>下载 .txt</button>
-      </div>
-
-      <div class="opts">
-        <label><input id="optComments" type="checkbox" checked />保留注释分组</label>
-        <label><input id="optExtra" type="checkbox" />带上 Excel 里额外字段（不在模板内的）</label>
-        <label><input id="optTrailingComma" type="checkbox" checked />末尾逗号</label>
-        <label>缩进 <input id="optIndent" type="number" min="0" max="20" value="8" /> 空格</label>
-      </div>
-
-      <div class="meta" id="meta">等你把 Excel 丢进来。</div>
-
-      <textarea id="output" spellcheck="false" placeholder='生成结果会是：\n        "YYYY-MM": [\n          { ... },\n        ],'></textarea>
-
-      <div class="hr"></div>
-      <div class="small">
-        使用小贴士：
-        <ul>
-          <li>建议用 https 页面（GitHub Pages / 内部静态站）打开，这样 <span class="kbd">一键复制</span> 成功率更高。</li>
-          <li>如果你确实遇到复制失败，直接点 <span class="kbd">下载 .txt</span>，复制文件内容也一样。</li>
-        </ul>
-      </div>
-    </div>
+  <h1>自然量数据 Excel 转 Code 工具</h1>
+  
+  <div class="controls">
+    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
+    <button onclick="copyToClipboard()">一键复制代码</button>
+    <span id="msg">已复制到剪贴板！</span>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div id="output-container">
+    <textarea id="output" placeholder="请上传 Excel 文件，代码将在这里生成..."></textarea>
+  </div>
 
-  <!-- SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
-    const TEMPLATE_GROUPS = [
-      { comment: "// 注册 & 付费（D0）", fields: ["registration", "D0_unique_purchase", "D0_PURCHASE_VALUE"] },
-      { comment: "// 投注人数（D0）", fields: ["D0_TOTAL_BET_PLACED_USER", "D0_SPORTS_BET_PLACED_USER", "D0_GAMES_BET_PLACED_USER"] },
-      { comment: "// 流水（D0）", fields: ["D0_SPORTS_BET_FLOW", "D0_GAMES_BET_FLOW", "D0_TOTAL_BET_FLOW"] },
-      { comment: "// 付费 & 投注（D7）", fields: ["D7_unique_purchase", "D7_PURCHASE_VALUE", "D7_TOTAL_BET_PLACED_USER", "D7_SPORTS_BET_PLACED_USER", "D7_GAMES_BET_PLACED_USER"] },
-      { comment: "// 流水（D7）", fields: ["D7_SPORTS_BET_FLOW", "D7_GAMES_BET_FLOW", "D7_TOTAL_BET_FLOW"] },
-      { comment: "// 留存", fields: ["D1_retained_users", "D7_retained_users"] },
-    ];
+    document.getElementById('fileInput').addEventListener('change', handleFile);
 
-    const TEMPLATE_FIELDS = new Set(TEMPLATE_GROUPS.flatMap(g => g.fields));
-    const FLOAT_FIELDS = new Set(
-      ["D0_PURCHASE_VALUE","D7_PURCHASE_VALUE","D0_SPORTS_BET_FLOW","D0_GAMES_BET_FLOW","D0_TOTAL_BET_FLOW","D7_SPORTS_BET_FLOW","D7_GAMES_BET_FLOW","D7_TOTAL_BET_FLOW"]
-    );
-
-    const $ = (id) => document.getElementById(id);
-
-    const excelInput = $("excelInput");
-    const btnGen = $("btnGen");
-    const btnCopy = $("btnCopy");
-    const btnDownload = $("btnDownload");
-    const optComments = $("optComments");
-    const optExtra = $("optExtra");
-    const optTrailingComma = $("optTrailingComma");
-    const optIndent = $("optIndent");
-    const meta = $("meta");
-    const output = $("output");
-    const toast = $("toast");
-
-    let lastText = "";
-
-    function pad2(n){ return String(n).padStart(2, "0"); }
-
-    function showToast(msg){
-      toast.textContent = msg;
-      toast.classList.add("show");
-      window.clearTimeout(showToast._t);
-      showToast._t = window.setTimeout(() => toast.classList.remove("show"), 1800);
-    }
-
-    function normalizeCountry(v){
-      if (v === null || v === undefined) return "";
-      return String(v).trim().toUpperCase();
-    }
-
-    function normalizeDateCell(v, wb){
-      // 1) Excel serial number (best, timezone-free)
-      if (typeof v === "number" && Number.isFinite(v)){
-        const date1904 = !!(wb && wb.Workbook && wb.Workbook.WBProps && wb.Workbook.WBProps.date1904);
-        const parsed = XLSX.SSF.parse_date_code(v, { date1904 });
-        if (!parsed || !parsed.y || !parsed.m || !parsed.d) return "";
-        return `${parsed.y}-${pad2(parsed.m)}-${pad2(parsed.d)}`;
-      }
-
-      // 2) Native Date (avoid timezone shift: always use UTC fields)
-      if (v instanceof Date){
-        const y = v.getUTCFullYear();
-        const m = v.getUTCMonth() + 1;
-        const d = v.getUTCDate();
-        if (!y || !m || !d) return "";
-        return `${y}-${pad2(m)}-${pad2(d)}`;
-      }
-
-      // 3) String (avoid Date.parse)
-      const s = String(v ?? "").trim();
-      if (!s) return "";
-
-      // yyyy-mm-dd / yyyy/mm/dd / yyyy.mm.dd
-      const m1 = s.match(/^(\d{4})[\/-\.](\d{1,2})[\/-\.](\d{1,2})/);
-      if (m1) return `${m1[1]}-${pad2(m1[2])}-${pad2(m1[3])}`;
-
-      // dd/mm/yyyy or mm/dd/yyyy (ambiguous, but at least stable)
-      const m2 = s.match(/^(\d{1,2})[\/-\.](\d{1,2})[\/-\.](\d{4})$/);
-      if (m2){
-        // 这里按“月/日/年”解释；如果你原始表是“日/月/年”，建议在导出时改成 yyyy-mm-dd
-        return `${m2[3]}-${pad2(m2[1])}-${pad2(m2[2])}`;
-      }
-
-      return "";
-    }
-
-    function parseNumber(v, isFloat){
-      if (v === null || v === undefined || v === "") return "0";
-      let n;
-      if (typeof v === "number") n = v;
-      else {
-        const cleaned = String(v).replace(/,/g, "").trim();
-        n = Number(cleaned);
-      }
-      if (!Number.isFinite(n)) return "0";
-
-      // -0 处理
-      if (Math.abs(n) < 1e-12) n = 0;
-
-      if (!isFloat){
-        return String(Math.round(n));
-      }
-
-      // 统一保留到 2 位小数，再去掉多余的 0
-      const s = (Math.round((n + Number.EPSILON) * 100) / 100).toFixed(2).replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
-      return s === "-0" ? "0" : s;
-    }
-
-    function getHeaders(ws){
-      const ref = ws["!ref"];
-      if (!ref) return [];
-      const range = XLSX.utils.decode_range(ref);
-      const headerRow = range.s.r; // 顶部第一行
-      const headers = [];
-      for (let c = range.s.c; c <= range.e.c; c++){
-        const addr = XLSX.utils.encode_cell({ r: headerRow, c });
-        const cell = ws[addr];
-        const h = cell ? String(cell.v).trim() : "";
-        if (h) headers.push(h);
-      }
-      return headers;
-    }
-
-    function genObjectLines(r, cfg, headers){
-      const i1 = " ".repeat(cfg.indent + 2);
-      const i2 = " ".repeat(cfg.indent + 4);
-      const lines = [];
-
-      lines.push(`${i1}{`);
-      lines.push(`${i2}date: "${r.date}", // YYYY-MM-DD`);
-      lines.push(`${i2}country: "${r.country}", // GH / KE / NG / TZ / UG`);
-      lines.push("");
-
-      for (const g of TEMPLATE_GROUPS){
-        if (cfg.comments) lines.push(`${i2}${g.comment}`);
-        for (const k of g.fields){
-          const v = parseNumber(r.raw[k], FLOAT_FIELDS.has(k));
-          lines.push(`${i2}${k}: ${v},`);
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // raw: false 保证读取到的就是 Excel 里看到的字符串，避免时区自动转换问题
+        const json = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+        
+        try {
+          processData(json);
+        } catch (err) {
+          alert("处理出错，请检查 Excel 表头是否与模板一致。\n错误信息: " + err.message);
         }
-        lines.push("");
-      }
-
-      if (cfg.extra){
-        const extraKeys = headers.filter(h =>
-          h !== "date" && h !== "country" && !TEMPLATE_FIELDS.has(h)
-        );
-        const hasAny = extraKeys.some(k => r.raw[k] !== null && r.raw[k] !== undefined && r.raw[k] !== "");
-        if (hasAny){
-          if (cfg.comments) lines.push(`${i2}// 其他字段（来自 Excel）`);
-          for (const k of extraKeys){
-            const v = parseNumber(r.raw[k], /(_VALUE|_FLOW)$/i.test(k));
-            lines.push(`${i2}${k}: ${v},`);
-          }
-          lines.push("");
-        }
-      }
-
-      // 去掉最后一个空行（保持紧凑）
-      while (lines.length && lines[lines.length - 1] === "") lines.pop();
-
-      lines.push(`${i1}}`);
-      return lines;
-    }
-
-    function generateCode(normalizedRows, wb, ws){
-      const cfg = {
-        comments: optComments.checked,
-        extra: optExtra.checked,
-        trailingComma: optTrailingComma.checked,
-        indent: Math.max(0, Math.min(20, Number(optIndent.value) || 0)),
       };
-
-      const headers = getHeaders(ws);
-
-      // sort: date asc, country asc
-      normalizedRows.sort((a,b) => (a.date === b.date ? a.country.localeCompare(b.country) : a.date.localeCompare(b.date)));
-
-      // group by month
-      const byMonth = new Map();
-      for (const r of normalizedRows){
-        const m = r.date.slice(0, 7);
-        if (!byMonth.has(m)) byMonth.set(m, []);
-        byMonth.get(m).push(r);
-      }
-
-      const i0 = " ".repeat(cfg.indent);
-      const out = [];
-
-      const months = Array.from(byMonth.keys()).sort();
-      for (let mi = 0; mi < months.length; mi++){
-        const month = months[mi];
-        const rows = byMonth.get(month);
-
-        out.push(`${i0}"${month}": [`);
-        for (let i = 0; i < rows.length; i++){
-          const objLines = genObjectLines(rows[i], cfg, headers);
-          // object trailing comma
-          const isLastObj = i === rows.length - 1;
-          if (cfg.trailingComma || !isLastObj){
-            objLines[objLines.length - 1] += ",";
-          }
-          out.push(...objLines);
-        }
-        out.push(`${i0}]${cfg.trailingComma ? "," : (mi === months.length - 1 ? "" : ",")}`);
-        if (mi !== months.length - 1) out.push("");
-      }
-
-      return { text: out.join("\n"), months, headers };
+      reader.readAsArrayBuffer(file);
     }
 
-    async function copyToClipboard(text){
-      if (!text) return;
+    function processData(data) {
+      // 1. 按月份分组 (YYYY-MM)
+      const grouped = {};
+      
+      data.forEach(row => {
+        // 容错处理：获取日期字符串
+        let dateStr = row['date'];
+        if (!dateStr) return; 
 
-      // 1) Modern API (best for big text)
-      try{
-        if (navigator.clipboard && navigator.clipboard.writeText){
-          await navigator.clipboard.writeText(text);
-          showToast("已复制");
-          return;
+        // 简单清洗日期格式，确保是 YYYY-MM-DD
+        // 如果 Excel 里是 2025/11/1，尝试替换为 2025-11-01
+        dateStr = dateStr.replace(/\//g, '-');
+        
+        // 提取月份 key
+        const monthKey = dateStr.substring(0, 7); // "2025-11"
+        if (!/^\d{4}-\d{2}$/.test(monthKey)) {
+             // 如果日期格式很怪，跳过或记录
+             return; 
         }
-      }catch(e){ /* fall back */ }
 
-      // 2) Fallback: execCommand
-      try{
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.setAttribute("readonly", "");
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        ta.style.top = "0";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        showToast(ok ? "已复制" : "复制失败，建议用“下载 .txt”");
-      }catch(e){
-        showToast("复制失败，建议用“下载 .txt”");
-      }
+        if (!grouped[monthKey]) grouped[monthKey] = [];
+        grouped[monthKey].push(row);
+      });
+
+      // 2. 生成代码字符串
+      let output = "";
+      const keys = Object.keys(grouped).sort(); // 按月份排序
+      
+      keys.forEach((mKey, index) => {
+        output += `"${mKey}": [\n`;
+        
+        // 对当月数据按日期、国家排序（可选）
+        grouped[mKey].sort((a, b) => (a.date > b.date ? 1 : -1));
+
+        grouped[mKey].forEach(r => {
+           // 辅助函数：安全获取数值
+           const val = (k) => {
+             const v = r[k];
+             // 处理空值、undefined 为 0，保留原有数字
+             return (v === undefined || v === null || v === '') ? 0 : v;
+           };
+           // 辅助函数：安全获取字符串
+           const strVal = (k) => (r[k] || "").toString().trim();
+           
+           const country = strVal("country").toUpperCase();
+           const date = strVal("date");
+           
+           output += `          {\n`;
+           output += `            date: "${date}", // YYYY-MM-DD\n`;
+           output += `            country: "${country}", // GH / KE / NG / TZ / UG\n\n`;
+           
+           output += `            // 注册 & 付费（D0）\n`;
+           output += `            registration: ${val("registration")},\n`;
+           output += `            D0_unique_purchase: ${val("D0_unique_purchase")},\n`;
+           output += `            D0_PURCHASE_VALUE: ${val("D0_PURCHASE_VALUE")},\n\n`;
+
+           output += `            // 投注人数（D0）\n`;
+           output += `            D0_TOTAL_BET_PLACED_USER: ${val("D0_TOTAL_BET_PLACED_USER")},\n`;
+           output += `            D0_SPORTS_BET_PLACED_USER: ${val("D0_SPORTS_BET_PLACED_USER")},\n`;
+           output += `            D0_GAMES_BET_PLACED_USER: ${val("D0_GAMES_BET_PLACED_USER")},\n\n`;
+           
+           output += `            // 流水（D0）\n`;
+           output += `            D0_SPORTS_BET_FLOW: ${val("D0_SPORTS_BET_FLOW")},\n`;
+           output += `            D0_GAMES_BET_FLOW: ${val("D0_GAMES_BET_FLOW")},\n`;
+           output += `            D0_TOTAL_BET_FLOW: ${val("D0_TOTAL_BET_FLOW")},\n\n`;
+           
+           output += `            // 付费 & 投注（D7）\n`;
+           output += `            D7_unique_purchase: ${val("D7_unique_purchase")},\n`;
+           output += `            D7_PURCHASE_VALUE: ${val("D7_PURCHASE_VALUE")},\n`;
+           output += `            D7_TOTAL_BET_PLACED_USER: ${val("D7_TOTAL_BET_PLACED_USER")},\n`;
+           output += `            D7_SPORTS_BET_PLACED_USER: ${val("D7_SPORTS_BET_PLACED_USER")},\n`;
+           output += `            D7_GAMES_BET_PLACED_USER: ${val("D7_GAMES_BET_PLACED_USER")},\n\n`;
+           
+           output += `            // 流水（D7）\n`;
+           output += `            D7_SPORTS_BET_FLOW: ${val("D7_SPORTS_BET_FLOW")},\n`;
+           output += `            D7_GAMES_BET_FLOW: ${val("D7_GAMES_BET_FLOW")},\n`;
+           output += `            D7_TOTAL_BET_FLOW: ${val("D7_TOTAL_BET_FLOW")},\n\n`;
+           
+           output += `            // 留存\n`;
+           output += `            D1_retained_users: ${val("D1_retained_users")},\n`;
+           output += `            D7_retained_users: ${val("D7_retained_users")},\n`;
+           output += `          },\n`;
+        });
+        
+        // 如果不是最后一个月，加个逗号
+        output += ` ]${index < keys.length - 1 ? ',' : ''}\n`;
+      });
+      
+      document.getElementById('output').value = output;
     }
-
-    function downloadText(text, filename){
-      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      showToast("已下载");
+    
+    function copyToClipboard() {
+      const copyText = document.getElementById("output");
+      if (!copyText.value) return;
+      
+      copyText.select();
+      copyText.setSelectionRange(0, 999999); /* For mobile devices */
+      
+      navigator.clipboard.writeText(copyText.value).then(() => {
+         const msg = document.getElementById("msg");
+         msg.style.opacity = 1;
+         setTimeout(() => msg.style.opacity = 0, 2000);
+      }).catch(err => {
+         console.error('Failed to copy: ', err);
+         alert("复制失败，请手动复制。");
+      });
     }
-
-    function buildMeta(info){
-      meta.textContent = info;
-    }
-
-    excelInput.addEventListener("change", () => {
-      lastText = "";
-      output.value = "";
-      btnCopy.disabled = true;
-      btnDownload.disabled = true;
-
-      const f = excelInput.files && excelInput.files[0];
-      if (!f){
-        btnGen.disabled = true;
-        buildMeta("等你把 Excel 丢进来。");
-        return;
-      }
-
-      btnGen.disabled = false;
-      buildMeta(`已选择：${f.name}（${Math.round(f.size/1024)} KB）\n点“生成代码”。`);
-    });
-
-    btnGen.addEventListener("click", async () => {
-      const f = excelInput.files && excelInput.files[0];
-      if (!f) return;
-
-      btnGen.disabled = true;
-      btnCopy.disabled = true;
-      btnDownload.disabled = true;
-      buildMeta("读取中…");
-
-      try{
-        const buf = await f.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array", cellDates: false });
-        const sheetName = wb.SheetNames[0];
-        const ws = wb.Sheets[sheetName];
-
-        if (!ws || !ws["!ref"]){
-          buildMeta("没读到有效 sheet。确认下 Excel 里是不是有数据。");
-          btnGen.disabled = false;
-          return;
-        }
-
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: null, raw: true });
-        if (!rows.length){
-          buildMeta("sheet 为空。");
-          btnGen.disabled = false;
-          return;
-        }
-
-        // Validate required columns
-        const headers = getHeaders(ws);
-        const missing = [];
-        for (const k of ["date","country"]){
-          if (!headers.includes(k)) missing.push(k);
-        }
-        if (missing.length){
-          buildMeta(`表头缺字段：${missing.join(", ")}\n最小要求：date, country + 你模板里的各指标列。`);
-          btnGen.disabled = false;
-          return;
-        }
-
-        // Normalize
-        const normalized = [];
-        let badDate = 0, badCountry = 0, dup = 0;
-        const seen = new Set();
-
-        for (let i = 0; i < rows.length; i++){
-          const r = rows[i];
-          const date = normalizeDateCell(r.date, wb);
-          const country = normalizeCountry(r.country);
-          if (!date) { badDate++; continue; }
-          if (!country) { badCountry++; continue; }
-
-          const key = `${date}|${country}`;
-          if (seen.has(key)) { dup++; continue; }
-          seen.add(key);
-
-          normalized.push({ date, country, raw: r });
-        }
-
-        const { text, months } = generateCode(normalized, wb, ws);
-        lastText = text;
-        output.value = text;
-
-        btnCopy.disabled = !text;
-        btnDownload.disabled = !text;
-
-        const extraCols = headers.filter(h => h !== "date" && h !== "country" && !TEMPLATE_FIELDS.has(h));
-        buildMeta(
-          `sheet：${sheetName}\n` +
-          `原始行数：${rows.length} 行\n` +
-          `有效行数：${normalized.length} 行（坏日期 ${badDate} / 坏国家 ${badCountry} / 重复 ${dup}）\n` +
-          `月份：${months.join(", ")}\n` +
-          `模板字段：${TEMPLATE_FIELDS.size} 列\n` +
-          `额外字段：${extraCols.length ? extraCols.join(", ") : "无"}\n` +
-          `输出字符数：${text.length.toLocaleString()}`
-        );
-
-        showToast("已生成");
-      }catch(e){
-        buildMeta(`处理失败：${e && e.message ? e.message : String(e)}`);
-      }finally{
-        btnGen.disabled = false;
-      }
-    });
-
-    btnCopy.addEventListener("click", () => copyToClipboard(lastText));
-
-    btnDownload.addEventListener("click", () => {
-      if (!lastText) return;
-      const f = excelInput.files && excelInput.files[0];
-      const base = f ? f.name.replace(/\.(xlsx|xls)$/i, "") : "RAW_ORGANIC";
-      downloadText(lastText, `${base}.snippet.txt`);
-    });
-
   </script>
 </body>
 </html>
