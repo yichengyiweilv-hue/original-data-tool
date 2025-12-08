@@ -1,28 +1,678 @@
-async function copyToClipboard(elementId, msgId) {
-            const copyText = document.getElementById(elementId);
-            if (!copyText.value) return;
 
-            try {
-                // 优先尝试现代 API (支持无限长度，需要 HTTPS 或 本地localhost)
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(copyText.value);
-                } else {
-                    // 降级方案 (传统方法)
-                    copyText.select();
-                    // 关键修改：将 99999 改为内容实际长度，彻底解除限制
-                    copyText.setSelectionRange(0, copyText.value.length + 1000); 
-                    document.execCommand("copy");
-                }
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Excel → RAW_*_BY_MONTH 代码生成</title>
+  <style>
+    :root{
+      --bg:#fff;
+      --text:#111;
+      --muted:#666;
+      --border:#e6e6e6;
+      --shadow:0 1px 2px rgba(0,0,0,.04);
+      --radius:12px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      max-width:1400px;
+      margin:0 auto;
+      padding:18px 18px 28px;
+    }
+    .topbar{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      justify-content:space-between;
+      margin-bottom:14px;
+    }
+    .title{
+      font-size:16px;
+      font-weight:700;
+      line-height:1.2;
+    }
+    .subtitle{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.4;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr;}
+    }
+    .card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+      min-height:520px;
+      display:flex;
+      flex-direction:column;
+    }
+    .card h2{
+      margin:0 0 10px 0;
+      font-size:14px;
+      font-weight:700;
+    }
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 12px;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    .row .grow{flex:1;}
+    .hint{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.4;
+      margin:4px 0 0;
+    }
+    label{
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+    }
+    input[type="file"]{
+      width:100%;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fff;
+      font-size:12px;
+    }
+    button{
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:12px;
+      cursor:pointer;
+      transition:transform .02s ease, border-color .15s ease;
+      white-space:nowrap;
+    }
+    button:hover{border-color:#cfcfcf;}
+    button:active{transform:translateY(1px);}
+    button.primary{
+      border-color:#bdbdbd;
+      font-weight:600;
+    }
+    button:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+    .meta{
+      margin:6px 0 10px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 14px;
+    }
+    .meta code{
+      font-family:var(--mono);
+      font-size:12px;
+      color:#333;
+      background:#fafafa;
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:2px 6px;
+    }
+    textarea{
+      flex:1;
+      width:100%;
+      resize:vertical;
+      min-height:320px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+      background:#fff;
+      font-family:var(--mono);
+      font-size:12px;
+      line-height:1.45;
+      outline:none;
+      overflow:auto;
+    }
+    .footerRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-top:10px;
+    }
+    .status{
+      font-size:12px;
+      color:var(--muted);
+      min-height:16px;
+    }
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:rgba(17,17,17,.92);
+      color:#fff;
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:12px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .15s ease, transform .15s ease;
+      max-width:min(760px, calc(100vw - 24px));
+      text-align:center;
+      z-index:9999;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <div class="title">Excel → RAW_*_BY_MONTH 代码生成（自然量 vs 买量）</div>
+        <div class="subtitle">
+          处理逻辑：把 <code>NULL</code> 视为 <code>0</code>；日期按“日历日”输出，不走 <code>Date.toISOString()</code>，避免时区偏移。
+        </div>
+      </div>
+      <div style="color:var(--muted); font-size:12px;">本页不上传到服务器，文件只在浏览器内解析</div>
+    </div>
 
-                // 显示成功提示
-                const msgElem = document.getElementById(msgId);
-                msgElem.classList.add('show');
-                setTimeout(() => {
-                    msgElem.classList.remove('show');
-                }, 2000);
+    <div class="grid">
+      <!-- Organic -->
+      <section class="card" id="cardOrganic">
+        <h2>左侧：自然量 Excel → <code>RAW_ORGANIC_BY_MONTH</code>（粘贴 "YYYY-MM": [...] 块）</h2>
 
-            } catch (err) {
-                console.error("复制失败，请尝试手动全选复制", err);
-                alert("自动复制失败，文本太长或权限不足，请手动全选复制。");
-            }
+        <div class="row">
+          <div class="grow">
+            <input id="fileOrganic" type="file" accept=".xlsx,.xls" />
+            <div class="hint">要求：表头固定；date/country 之外默认按数值字段处理。</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label><input id="orgIncludeGgr" type="checkbox" />包含 GGR 字段（D0/D7_*_GGR_VALUE）</label>
+          <label><input id="orgWrapConst" type="checkbox" />输出整段 <code>const RAW_ORGANIC_BY_MONTH = { ... }</code></label>
+        </div>
+
+        <div class="meta" id="orgMeta">
+          <span>行数：<code>0</code></span>
+          <span>月份：<code>-</code></span>
+          <span>忽略字段：<code>-</code></span>
+        </div>
+
+        <textarea id="orgCode" spellcheck="false" placeholder="上传自然量 Excel 后，这里会生成可粘贴代码…"></textarea>
+
+        <div class="footerRow">
+          <div class="status" id="orgStatus"></div>
+          <div style="display:flex; gap:10px;">
+            <button class="primary" id="orgBuildBtn" disabled>生成代码</button>
+            <button id="orgCopyBtn" disabled>一键复制</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Paid -->
+      <section class="card" id="cardPaid">
+        <h2>右侧：买量 Excel → <code>RAW_PAID_BY_MONTH</code>（粘贴 "YYYY-MM": [...] 块）</h2>
+
+        <div class="row">
+          <div class="grow">
+            <input id="filePaid" type="file" accept=".xlsx,.xls" />
+            <div class="hint">要求：表头固定；支持 <code>Product_type</code>→<code>productType</code> 自动映射。</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label><input id="paidIncludeGgr" type="checkbox" />包含 GGR 字段（D0/D7_*_GGR_VALUE）</label>
+          <label><input id="paidWrapWindow" type="checkbox" />输出整段 <code>window.RAW_PAID_BY_MONTH = { ... }</code></label>
+        </div>
+
+        <div class="meta" id="paidMeta">
+          <span>行数：<code>0</code></span>
+          <span>月份：<code>-</code></span>
+          <span>忽略字段：<code>-</code></span>
+        </div>
+
+        <textarea id="paidCode" spellcheck="false" placeholder="上传买量 Excel 后，这里会生成可粘贴代码…"></textarea>
+
+        <div class="footerRow">
+          <div class="status" id="paidStatus"></div>
+          <div style="display:flex; gap:10px;">
+            <button class="primary" id="paidBuildBtn" disabled>生成代码</button>
+            <button id="paidCopyBtn" disabled>一键复制</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- SheetJS (xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    // ----------- schema -----------
+    const ORGANIC_FIELDS_BASE = [
+      "date","country","registration",
+      "D0_unique_purchase","D7_unique_purchase",
+      "D0_PURCHASE_VALUE","D7_PURCHASE_VALUE",
+      "D0_TOTAL_BET_PLACED_USER","D7_TOTAL_BET_PLACED_USER",
+      "D0_SPORTS_BET_PLACED_USER","D0_GAMES_BET_PLACED_USER",
+      "D7_SPORTS_BET_PLACED_USER","D7_GAMES_BET_PLACED_USER",
+      "D0_SPORTS_BET_FLOW","D0_GAMES_BET_FLOW","D0_TOTAL_BET_FLOW",
+      "D7_SPORTS_BET_FLOW","D7_GAMES_BET_FLOW","D7_TOTAL_BET_FLOW",
+      "D1_retained_users","D7_retained_users",
+    ];
+    const PAID_FIELDS_BASE = [
+      "date","country","media","productType","spent","registration",
+      "D0_unique_purchase","D7_unique_purchase",
+      "D0_PURCHASE_VALUE","D7_PURCHASE_VALUE",
+      "D0_TOTAL_BET_PLACED_USER","D7_TOTAL_BET_PLACED_USER",
+      "D0_SPORTS_BET_PLACED_USER","D0_GAMES_BET_PLACED_USER",
+      "D7_SPORTS_BET_PLACED_USER","D7_GAMES_BET_PLACED_USER",
+      "D0_SPORTS_BET_FLOW","D0_GAMES_BET_FLOW","D0_TOTAL_BET_FLOW",
+      "D7_SPORTS_BET_FLOW","D7_GAMES_BET_FLOW","D7_TOTAL_BET_FLOW",
+      "D1_retained_users","D7_retained_users",
+    ];
+    const GGR_FIELDS = [
+      "D0_SPORTS_GGR_VALUE","D0_GAMES_GGR_VALUE","D0_GGR_VALUE",
+      "D7_SPORTS_GGR_VALUE","D7_GAMES_GGR_VALUE","D7_GGR_VALUE",
+    ];
+
+    const STRING_FIELDS_ORG = new Set(["date","country"]);
+    const STRING_FIELDS_PAID = new Set(["date","country","media","productType"]);
+
+    // ----------- helpers -----------
+    const $ = (id) => document.getElementById(id);
+    const toastEl = $("toast");
+    let toastTimer = null;
+
+    function toast(msg){
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1200);
+    }
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    function safeString(v){
+      if (v === null || v === undefined) return "";
+      const s = String(v).trim();
+      if (!s) return "";
+      if (s.toUpperCase() === "NULL") return "";
+      return s;
+    }
+
+    function toNumber(v){
+      if (v === null || v === undefined) return 0;
+      if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+      if (typeof v === "boolean") return v ? 1 : 0;
+      let s = String(v).trim();
+      if (!s) return 0;
+      if (s.toUpperCase() === "NULL") return 0;
+      // remove commas, common in exports
+      s = s.replace(/,/g, "");
+      const n = Number(s);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    // key point: do NOT use Date.toISOString() (timezone shift risk).
+    function toDateString(v){
+      if (v === null || v === undefined || v === "") return "";
+      // Excel serial number
+      if (typeof v === "number" && Number.isFinite(v)){
+        const dc = XLSX.SSF.parse_date_code(v);
+        if (!dc || !dc.y || !dc.m || !dc.d) return "";
+        return `${dc.y}-${pad2(dc.m)}-${pad2(dc.d)}`;
+      }
+      // Date object (fallback)
+      if (v instanceof Date && !isNaN(v.getTime())){
+        // Use local calendar components to keep "what user sees" as date
+        return `${v.getFullYear()}-${pad2(v.getMonth()+1)}-${pad2(v.getDate())}`;
+      }
+      // String formats
+      const s = String(v).trim();
+      if (!s) return "";
+      // YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD (+ time)
+      let m = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+      if (m) return `${m[1]}-${pad2(m[2])}-${pad2(m[3])}`;
+      // MM/DD/YYYY or M/D/YYYY
+      m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+      if (m) return `${m[3]}-${pad2(m[1])}-${pad2(m[2])}`;
+      return "";
+    }
+
+    function escapeJsString(s){
+      return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+    }
+
+    function formatJsValue(field, value, isStringField){
+      if (isStringField){
+        return `"${escapeJsString(value)}"`;
+      }
+      // numbers
+      const n = toNumber(value);
+      // avoid "-0"
+      const cleaned = Object.is(n, -0) ? 0 : n;
+      // keep integers as ints
+      if (Number.isInteger(cleaned)) return String(cleaned);
+      // keep up to 6 decimals without trailing zeros explosion
+      const s = cleaned.toString();
+      if (s.includes("e") || s.includes("E")) {
+        // Expand scientific notation in a safe-ish way for typical data scales
+        const fixed = cleaned.toFixed(6);
+        return fixed.replace(/\.?0+$/,"");
+      }
+      return s;
+    }
+
+    async function copyHugeText(text){
+      if (!text) return false;
+      // 1) modern API
+      try{
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(text);
+          return true;
         }
+      }catch(e){}
+      // 2) fallback: hidden textarea + execCommand
+      try{
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return !!ok;
+      }catch(e){}
+      return false;
+    }
+
+    async function readFirstSheetRows(file){
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type:"array", cellDates:false, raw:true });
+      const sheetName = wb.SheetNames && wb.SheetNames[0];
+      if (!sheetName) throw new Error("未找到工作表");
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, {
+        defval: null,
+        raw: true,
+      });
+      if (!Array.isArray(rows) || rows.length === 0) throw new Error("空表或未识别到数据行");
+      return rows;
+    }
+
+    function normalizeCountry(v){
+      const s = safeString(v);
+      return s ? s.toUpperCase() : "";
+    }
+    function normalizeMedia(v){
+      const s = safeString(v);
+      return s ? s.toUpperCase() : "";
+    }
+    function normalizeProductType(v){
+      const s = safeString(v);
+      // keep original (app / H5), but trim
+      return s;
+    }
+
+    function pick(row, keys){
+      for (const k of keys){
+        if (k in row) return row[k];
+        // case-insensitive fallback
+        const found = Object.keys(row).find(x => String(x).trim().toLowerCase() === String(k).trim().toLowerCase());
+        if (found) return row[found];
+      }
+      return null;
+    }
+
+    function buildByMonth(rows, fields, stringFields, mapper, sortKeys){
+      const byMonth = {};
+      let ignoredCols = new Set();
+      rows.forEach((r) => Object.keys(r).forEach(k => ignoredCols.add(String(k))));
+      fields.forEach(f => ignoredCols.delete(f));
+      // also remove mapped source keys
+      (mapper.sourceKeys || []).forEach(k => ignoredCols.delete(k));
+
+      const outRows = [];
+      for (const r of rows){
+        const obj = {};
+        for (const f of fields){
+          if (f === "date"){
+            obj.date = toDateString(pick(r, mapper.dateKeys));
+            continue;
+          }
+          if (f === "country"){
+            obj.country = normalizeCountry(pick(r, mapper.countryKeys));
+            continue;
+          }
+          if (f === "media"){
+            obj.media = normalizeMedia(pick(r, mapper.mediaKeys));
+            continue;
+          }
+          if (f === "productType"){
+            obj.productType = normalizeProductType(pick(r, mapper.productTypeKeys));
+            continue;
+          }
+          // numeric fields: treat "NULL" as 0
+          const rawVal = pick(r, [f]);
+          obj[f] = (rawVal && String(rawVal).trim().toUpperCase() === "NULL") ? 0 : toNumber(rawVal);
+        }
+        // skip rows without date or country (usually blank tail)
+        if (!obj.date || !obj.country) continue;
+        outRows.push(obj);
+        const m = obj.date.slice(0,7);
+        if (!byMonth[m]) byMonth[m] = [];
+        byMonth[m].push(obj);
+      }
+
+      // sorting for deterministic output
+      const cmp = (a,b) => {
+        for (const k of sortKeys){
+          const va = a[k] ?? "";
+          const vb = b[k] ?? "";
+          if (va < vb) return -1;
+          if (va > vb) return 1;
+        }
+        return 0;
+      };
+      Object.keys(byMonth).forEach(m => byMonth[m].sort(cmp));
+
+      return { byMonth, ignoredCols: Array.from(ignoredCols).filter(Boolean).sort() };
+    }
+
+    function formatMonthBlocks(byMonth, fields, stringFields, indentMonth=0, indentRow=2){
+      const months = Object.keys(byMonth).sort();
+      const blocks = [];
+      const im = " ".repeat(indentMonth);
+      const ir = " ".repeat(indentRow);
+      const ir2 = " ".repeat(indentRow + 2);
+
+      for (const m of months){
+        const rows = byMonth[m] || [];
+        const lines = [];
+        lines.push(`${im}"${m}": [`);
+        for (const row of rows){
+          const parts = [];
+          for (const f of fields){
+            // ensure key order, including mapper-generated keys
+            const isStr = stringFields.has(f);
+            const v = row[f];
+            const vStr = formatJsValue(f, v, isStr);
+            parts.push(`${f}: ${vStr}`);
+          }
+          lines.push(`${ir}{ ${parts.join(", ")} },`);
+        }
+        lines.push(`${im}],`);
+        blocks.push(lines.join("\n"));
+      }
+      return blocks.join("\n\n");
+    }
+
+    // ----------- Organic wiring -----------
+    let organicRowsCache = null;
+    $("fileOrganic").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      organicRowsCache = null;
+      $("orgCode").value = "";
+      $("orgBuildBtn").disabled = true;
+      $("orgCopyBtn").disabled = true;
+      $("orgStatus").textContent = "";
+      updateMeta("orgMeta", 0, "-", "-");
+      if (!f) return;
+
+      $("orgStatus").textContent = "读取中…";
+      try{
+        organicRowsCache = await readFirstSheetRows(f);
+        $("orgBuildBtn").disabled = false;
+        $("orgStatus").textContent = `已读取：${f.name}`;
+        updateMeta("orgMeta", organicRowsCache.length, "待生成", "待计算");
+      }catch(err){
+        $("orgStatus").textContent = `读取失败：${err.message || err}`;
+      }
+    });
+
+    $("orgBuildBtn").addEventListener("click", () => {
+      if (!organicRowsCache) return;
+      const includeGgr = $("orgIncludeGgr").checked;
+      const wrapConst = $("orgWrapConst").checked;
+      const fields = includeGgr ? ORGANIC_FIELDS_BASE.concat(GGR_FIELDS) : ORGANIC_FIELDS_BASE.slice();
+
+      const { byMonth, ignoredCols } = buildByMonth(
+        organicRowsCache,
+        fields,
+        STRING_FIELDS_ORG,
+        {
+          dateKeys: ["date", "Date"],
+          countryKeys: ["country", "Country"],
+          sourceKeys: [],
+        },
+        ["date", "country"]
+      );
+
+      const months = Object.keys(byMonth).sort();
+      const blocks = formatMonthBlocks(byMonth, fields, new Set(["date","country"]), 0, 2);
+      const code = wrapConst
+        ? `const RAW_ORGANIC_BY_MONTH = {\n${indent(blocks, 2)}\n};`
+        : blocks;
+
+      $("orgCode").value = code;
+      $("orgCopyBtn").disabled = !code;
+      $("orgStatus").textContent = months.length ? `生成完成：${months.join(", ")}` : "未识别到有效行";
+      updateMeta("orgMeta", organicRowsCache.length, months.length ? months.join(", ") : "-", ignoredCols.length ? ignoredCols.join(", ") : "-");
+    });
+
+    $("orgCopyBtn").addEventListener("click", async () => {
+      const text = $("orgCode").value || "";
+      const ok = await copyHugeText(text);
+      toast(ok ? "已复制（自然量）" : "复制失败：浏览器权限或内容过大");
+    });
+
+    // ----------- Paid wiring -----------
+    let paidRowsCache = null;
+    $("filePaid").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      paidRowsCache = null;
+      $("paidCode").value = "";
+      $("paidBuildBtn").disabled = true;
+      $("paidCopyBtn").disabled = true;
+      $("paidStatus").textContent = "";
+      updateMeta("paidMeta", 0, "-", "-");
+      if (!f) return;
+
+      $("paidStatus").textContent = "读取中…";
+      try{
+        paidRowsCache = await readFirstSheetRows(f);
+        $("paidBuildBtn").disabled = false;
+        $("paidStatus").textContent = `已读取：${f.name}`;
+        updateMeta("paidMeta", paidRowsCache.length, "待生成", "待计算");
+      }catch(err){
+        $("paidStatus").textContent = `读取失败：${err.message || err}`;
+      }
+    });
+
+    $("paidBuildBtn").addEventListener("click", () => {
+      if (!paidRowsCache) return;
+      const includeGgr = $("paidIncludeGgr").checked;
+      const wrapWindow = $("paidWrapWindow").checked;
+      const fields = includeGgr ? PAID_FIELDS_BASE.concat(GGR_FIELDS) : PAID_FIELDS_BASE.slice();
+
+      const { byMonth, ignoredCols } = buildByMonth(
+        paidRowsCache,
+        fields,
+        STRING_FIELDS_PAID,
+        {
+          dateKeys: ["date", "Date"],
+          countryKeys: ["country", "Country"],
+          mediaKeys: ["media", "Media"],
+          productTypeKeys: ["productType","Product_type","ProductType","product_type"],
+          sourceKeys: ["Product_type","ProductType","product_type"],
+        },
+        ["date", "country", "media", "productType"]
+      );
+
+      const months = Object.keys(byMonth).sort();
+      const blocks = formatMonthBlocks(byMonth, fields, new Set(["date","country","media","productType"]), 0, 2);
+      const code = wrapWindow
+        ? `window.RAW_PAID_BY_MONTH = {\n${indent(blocks, 2)}\n};`
+        : blocks;
+
+      $("paidCode").value = code;
+      $("paidCopyBtn").disabled = !code;
+      $("paidStatus").textContent = months.length ? `生成完成：${months.join(", ")}` : "未识别到有效行";
+      updateMeta("paidMeta", paidRowsCache.length, months.length ? months.join(", ") : "-", ignoredCols.length ? ignoredCols.join(", ") : "-");
+    });
+
+    $("paidCopyBtn").addEventListener("click", async () => {
+      const text = $("paidCode").value || "";
+      const ok = await copyHugeText(text);
+      toast(ok ? "已复制（买量）" : "复制失败：浏览器权限或内容过大");
+    });
+
+    // ----------- tiny utils -----------
+    function updateMeta(metaId, rows, months, ignored){
+      const meta = $(metaId);
+      const codes = meta.querySelectorAll("code");
+      if (codes.length >= 3){
+        codes[0].textContent = String(rows);
+        codes[1].textContent = String(months);
+        codes[2].textContent = String(ignored);
+      }
+    }
+
+    function indent(text, spaces){
+      const pad = " ".repeat(spaces);
+      return String(text).split("\n").map(line => line ? pad + line : line).join("\n");
+    }
+  </script>
+</body>
+</html>
