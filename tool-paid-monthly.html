@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RAW_PAID_BY_MONTH 代码生成器</title>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background: #fff;
+      color: #111;
+    }
+    .wrap { max-width: 1120px; margin: 28px auto; padding: 0 16px 48px; }
+    .title { font-size: 18px; font-weight: 600; margin: 0 0 10px; }
+    .hint { margin: 0 0 16px; color: #6b7280; font-size: 12px; line-height: 1.6; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .file { display:flex; align-items:center; gap: 10px; }
+    input[type="file"] { max-width: 380px; }
+    button {
+      background: #111827;
+      color: #fff;
+      border: 1px solid #111827;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button.secondary { background: #fff; color: #111827; border: 1px solid #e5e7eb; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .meta { color: #6b7280; font-size: 12px; margin: 6px 0 12px; }
+    textarea {
+      width: 100%;
+      min-height: 520px;
+      resize: vertical;
+      box-sizing: border-box;
+      background: #fff;
+      color: #111;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      background: rgba(17, 24, 39, .92);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease;
+    }
+    .toast.show { opacity: 1; }
+    .danger { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">RAW_PAID_BY_MONTH 代码生成器</h1>
+    <p class="hint">
+      读取本地 Excel（不上传服务器），把 <code>NULL</code>/空值按数字 0 处理，按 <code>"YYYY-MM": [ ... ]</code> 输出。
+      日期按“纯日期”解析，避免 <code>toISOString()</code> 造成的跨日偏移。
+    </p>
+
+    <div class="card">
+      <div class="controls">
+        <div class="file">
+          <input id="file" type="file" accept=".xlsx,.xls" />
+          <span class="meta" id="fileName">未选择文件</span>
+        </div>
+
+        <button id="copyBtn" disabled>一键复制代码</button>
+        <button id="selectBtn" class="secondary" disabled>全选</button>
+        <button id="clearBtn" class="secondary" disabled>清空</button>
+      </div>
+
+      <div class="meta" id="meta">等待上传…</div>
+      <textarea id="output" readonly spellcheck="false" placeholder="生成的代码会出现在这儿"></textarea>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const fileInput = $("file");
+    const fileName = $("fileName");
+    const meta = $("meta");
+    const output = $("output");
+    const copyBtn = $("copyBtn");
+    const selectBtn = $("selectBtn");
+    const clearBtn = $("clearBtn");
+
+    let toastTimer = null;
+    function toast(msg) {
+      const el = $("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 1400);
+    }
+
+    const pad2 = (n) => String(n).padStart(2, "0");
+
+    function formatExcelDate(v) {
+      if (v === null || v === undefined || v === "") return "";
+
+      // 1) Excel serial number —— 完全不吃时区
+      if (typeof v === "number" && Number.isFinite(v)) {
+        const dc = XLSX.SSF.parse_date_code(v);
+        if (!dc || !dc.y || !dc.m || !dc.d) return "";
+        return `${dc.y}-${pad2(dc.m)}-${pad2(dc.d)}`;
+      }
+
+      // 2) Date object —— 不用 toISOString，避免 UTC 转换导致跨日
+      if (v instanceof Date && !Number.isNaN(v.getTime())) {
+        return `${v.getFullYear()}-${pad2(v.getMonth() + 1)}-${pad2(v.getDate())}`;
+      }
+
+      // 3) String
+      const s = String(v).trim();
+      // 2025-11-01 / 2025/11/1 / 2025-11-01 00:00:00
+      let m = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+      if (m) return `${Number(m[1])}-${pad2(Number(m[2]))}-${pad2(Number(m[3]))}`;
+
+      // 11/1/2025 (兜底，按 MM/DD/YYYY 解释)
+      m = s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+      if (m) return `${Number(m[3])}-${pad2(Number(m[1]))}-${pad2(Number(m[2]))}`;
+
+      return "";
+    }
+
+    function toStringSafe(v) {
+      if (v === null || v === undefined) return "";
+      const s = String(v).trim();
+      if (s.toUpperCase() === "NULL") return "";
+      return s;
+    }
+
+    function toNumberSafe(v) {
+      if (v === null || v === undefined) return 0;
+      if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+      const s = String(v).trim();
+      if (s === "" || s.toUpperCase() === "NULL") return 0;
+
+      // 1,234.56 -> 1234.56
+      const n = Number(s.replace(/,/g, ""));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function isValidIdentifier(k) {
+      return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(k);
+    }
+
+    function buildCode(headers, dataRows) {
+      const cleanedHeaders = headers.map(h => String(h ?? "").replace(/\uFEFF/g, "").trim());
+      const idx = {};
+      cleanedHeaders.forEach((h, i) => { idx[h.toLowerCase()] = i; });
+
+      const dateCol = idx["date"];
+      const countryCol = idx["country"];
+      const mediaCol = idx["media"];
+      const productCol = idx["product_type"] ?? idx["producttype"];
+
+      if (dateCol === undefined || countryCol === undefined || mediaCol === undefined || productCol === undefined) {
+        throw new Error("缺少必要列：date / country / media / Product_type");
+      }
+
+      const renamedHeaders = cleanedHeaders.map(h => (h.toLowerCase() === "product_type" ? "productType" : h));
+
+      // key 顺序：维度在前，其余按表头顺序
+      const dimKeys = ["date", "country", "media", "productType"];
+      const restKeys = renamedHeaders.filter(k => !dimKeys.includes(k));
+      const orderedKeys = [...dimKeys, ...restKeys];
+
+      const groups = new Map(); // month -> [{k, s}]
+      const warnings = [];
+      let produced = 0;
+      let skipped = 0;
+
+      for (const row of dataRows) {
+        // 空行过滤
+        if (!row || !row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== "")) continue;
+
+        const raw = {};
+        for (let i = 0; i < renamedHeaders.length; i++) raw[renamedHeaders[i]] = row[i];
+
+        const dateStr = formatExcelDate(raw[renamedHeaders[dateCol]]);
+        if (!dateStr) { skipped++; continue; }
+
+        const country = toStringSafe(raw[renamedHeaders[countryCol]]).toUpperCase();
+        const media = toStringSafe(raw[renamedHeaders[mediaCol]]).toUpperCase();
+        const productType = toStringSafe(raw[renamedHeaders[productCol]]);
+
+        const month = dateStr.slice(0, 7);
+
+        const processed = { date: dateStr, country, media, productType };
+        for (const k of restKeys) processed[k] = toNumberSafe(raw[k]);
+
+        const props = orderedKeys.map(k => {
+          const keyStr = isValidIdentifier(k) ? k : JSON.stringify(k);
+          let valStr;
+          if (dimKeys.includes(k)) valStr = JSON.stringify(processed[k] ?? "");
+          else {
+            const n = processed[k];
+            valStr = Number.isInteger(n) ? String(n) : String(n);
+          }
+          return `${keyStr}: ${valStr}`;
+        });
+
+        const objStr = `{ ${props.join(", ")} }`;
+        const sortKey = `${processed.date}|${processed.country}|${processed.media}|${processed.productType}`;
+
+        if (!groups.has(month)) groups.set(month, []);
+        groups.get(month).push({ k: sortKey, s: objStr });
+
+        produced++;
+      }
+
+      if (skipped) warnings.push(`跳过 ${skipped} 行（date 解析失败/为空）`);
+
+      const months = [...groups.keys()].sort();
+      const lines = [];
+
+      for (const m of months) {
+        lines.push(`  "${m}": [`);
+        const arr = groups.get(m).sort((a, b) => a.k.localeCompare(b.k));
+        for (const it of arr) lines.push(`    ${it.s},`);
+        lines.push(`  ],`);
+        lines.push("");
+      }
+
+      return {
+        code: lines.join("\n").trimEnd(),
+        rowCount: produced,
+        months,
+        columns: orderedKeys.length,
+        warnings
+      };
+    }
+
+    async function copyLargeText(text) {
+      if (!text) return;
+
+      // 优先 Clipboard API（字符数大也更稳）
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("已复制");
+        return;
+      } catch (e) {
+        // fall through
+      }
+
+      // 兜底：execCommand（兼容老浏览器/非 https）
+      output.focus();
+      output.select();
+      output.setSelectionRange(0, output.value.length);
+      const ok = document.execCommand("copy");
+      toast(ok ? "已复制" : "复制失败，请手动复制");
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      fileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      meta.classList.remove("danger");
+      meta.textContent = "读取中…";
+
+      try {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array", cellDates: false });
+        const sheetName = wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, {
+          header: 1,
+          raw: true,
+          defval: null,
+          blankrows: false
+        });
+
+        if (!rows || rows.length < 2) throw new Error("Excel 没有有效数据行");
+
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        const res = buildCode(headers, dataRows);
+
+        output.value = res.code;
+        copyBtn.disabled = !res.code;
+        selectBtn.disabled = !res.code;
+        clearBtn.disabled = !res.code;
+
+        const warn = res.warnings.length ? `；注意：${res.warnings.join("；")}` : "";
+        meta.textContent = `Sheet：${sheetName}；输出行数：${res.rowCount}；月份：${res.months.join(", ")}；字段数：${res.columns}${warn}`;
+
+        toast("已生成");
+      } catch (err) {
+        output.value = "";
+        copyBtn.disabled = true;
+        selectBtn.disabled = true;
+        clearBtn.disabled = true;
+
+        meta.classList.add("danger");
+        meta.textContent = `解析失败：${err && err.message ? err.message : String(err)}`;
+        toast("解析失败");
+      }
+    });
+
+    copyBtn.addEventListener("click", () => copyLargeText(output.value));
+    selectBtn.addEventListener("click", () => {
+      output.focus();
+      output.select();
+      toast("已全选");
+    });
+    clearBtn.addEventListener("click", () => {
+      output.value = "";
+      copyBtn.disabled = true;
+      selectBtn.disabled = true;
+      clearBtn.disabled = true;
+      meta.textContent = "等待上传…";
+      toast("已清空");
+    });
+  </script>
+</body>
+</html>
